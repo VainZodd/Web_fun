@@ -75,8 +75,8 @@
     <!-- === SIDEBAR === -->
     <aside class="w-full md:w-64 glass flex-shrink-0 flex md:flex-col justify-between z-50 md:h-screen fixed md:relative bottom-0 border-t md:border-t-0 md:border-r border-white/10">
         <!-- Logo Area -->
-        <div class="hidden md:flex items-center gap-3 p-6">
-            <div class="w-8 h-8 rounded bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.4)]">
+        <div class="hidden md:flex items-center gap-3 p-6 cursor-pointer group" onclick="app.router('dashboard')">
+            <div class="w-8 h-8 rounded bg-gradient-to-tr from-primary to-accent flex items-center justify-center shadow-[0_0_15px_rgba(139,92,246,0.4)] group-hover:scale-110 transition-transform">
                 <span class="material-symbols-rounded text-white text-lg">grid_view</span>
             </div>
             <h1 class="font-display font-bold text-xl tracking-wider text-white neon-text">LIFE<span class="text-primary">OS</span></h1>
@@ -84,6 +84,10 @@
 
         <!-- Navigation -->
         <nav class="flex md:flex-col w-full md:w-auto justify-around md:justify-start md:px-4 gap-1 md:gap-2 p-2 md:p-0">
+            <button onclick="app.router('dashboard')" class="nav-item group flex flex-col md:flex-row items-center md:gap-3 p-2 md:px-4 md:py-3 rounded-lg hover:bg-white/5 transition-all w-full text-left" id="nav-dashboard">
+                <span class="material-symbols-rounded group-hover:text-primary transition-colors">grid_view</span>
+                <span class="text-[10px] md:text-sm font-medium">Dashboard</span>
+            </button>
             <button onclick="app.router('dms')" class="nav-item group flex flex-col md:flex-row items-center md:gap-3 p-2 md:px-4 md:py-3 rounded-lg hover:bg-white/5 transition-all w-full text-left" id="nav-dms">
                 <span class="material-symbols-rounded group-hover:text-primary transition-colors">folder_open</span>
                 <span class="text-[10px] md:text-sm font-medium">Dateien</span>
@@ -99,12 +103,13 @@
         </nav>
 
         <!-- User Profile (Desktop only visual) -->
-        <div class="hidden md:flex p-4 border-t border-white/10 items-center gap-3 mt-auto">
-            <div class="w-8 h-8 rounded-full bg-zinc-700 overflow-hidden">
+        <div class="hidden md:flex p-4 border-t border-white/10 items-center gap-3 mt-auto cursor-pointer hover:bg-white/5 transition-all group"
+             onclick="alert('Profil-Einstellungen demnächst verfügbar')">
+            <div class="w-8 h-8 rounded-full bg-zinc-700 overflow-hidden group-hover:ring-2 group-hover:ring-primary transition-all">
                 <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User">
             </div>
             <div>
-                <p class="text-xs font-bold text-white">Admin User</p>
+                <p class="text-xs font-bold text-white group-hover:text-primary transition-colors">Admin User</p>
                 <p class="text-[10px] text-zinc-500">System Online</p>
             </div>
         </div>
@@ -137,6 +142,64 @@
         <!-- SCROLLABLE CONTENT AREA -->
         <main class="flex-1 overflow-y-auto p-4 md:p-8 pb-24 md:pb-8 relative">
             
+            <!-- MODULE 0: DASHBOARD -->
+            <section id="view-dashboard" class="fade-in hidden">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <!-- Stats Cards -->
+                    <div class="glass-panel p-6 border-l-4 border-primary">
+                        <p class="text-zinc-500 text-xs uppercase tracking-wider font-bold mb-1">Dateien</p>
+                        <div class="flex items-end justify-between">
+                            <h3 class="text-3xl font-bold text-white" id="stats-dms">0</h3>
+                            <span class="material-symbols-rounded text-primary opacity-50">folder</span>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-6 border-l-4 border-accent">
+                        <p class="text-zinc-500 text-xs uppercase tracking-wider font-bold mb-1">Gegenstände</p>
+                        <div class="flex items-end justify-between">
+                            <h3 class="text-3xl font-bold text-white" id="stats-inventory">0</h3>
+                            <span class="material-symbols-rounded text-accent opacity-50">inventory_2</span>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-6 border-l-4 border-success">
+                        <p class="text-zinc-500 text-xs uppercase tracking-wider font-bold mb-1">Offene Aufgaben</p>
+                        <div class="flex items-end justify-between">
+                            <h3 class="text-3xl font-bold text-white" id="stats-planner">0</h3>
+                            <span class="material-symbols-rounded text-success opacity-50">task_alt</span>
+                        </div>
+                    </div>
+                    <div class="glass-panel p-6 border-l-4 border-danger">
+                        <p class="text-zinc-500 text-xs uppercase tracking-wider font-bold mb-1">System Status</p>
+                        <div class="flex items-end justify-between">
+                            <h3 class="text-xl font-bold text-white">Online</h3>
+                            <span class="material-symbols-rounded text-danger animate-pulse">sensors</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Recent Files -->
+                    <div class="glass-panel p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-white font-display font-bold text-lg">Letzte Dateien</h3>
+                            <button onclick="app.router('dms')" class="text-xs text-primary hover:underline">Alle ansehen</button>
+                        </div>
+                        <div id="dashboard-recent-dms" class="space-y-3">
+                            <!-- JS Injected -->
+                        </div>
+                    </div>
+                    <!-- Upcoming Tasks -->
+                    <div class="glass-panel p-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-white font-display font-bold text-lg">Nächste Aufgaben</h3>
+                            <button onclick="app.router('planner')" class="text-xs text-success hover:underline">Alle ansehen</button>
+                        </div>
+                        <div id="dashboard-tasks" class="space-y-3">
+                            <!-- JS Injected -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- MODULE 1: DMS (Documents) -->
             <section id="view-dms" class="fade-in hidden">
                 <div class="flex items-center gap-2 mb-6 text-sm text-zinc-400">
@@ -289,7 +352,7 @@
                 });
 
                 // 4. Initial Render
-                this.router('dms');
+                this.router('dashboard');
             },
 
             save() {
@@ -311,7 +374,12 @@
                 document.getElementById(`nav-${viewName}`).classList.add('active');
 
                 // Header Title
-                const titles = { dms: 'Dateimanager', inventory: 'Lagerbestand', planner: 'Aufgaben & Termine' };
+                const titles = {
+                    dashboard: 'System Übersicht',
+                    dms: 'Dateimanager',
+                    inventory: 'Lagerbestand',
+                    planner: 'Aufgaben & Termine'
+                };
                 document.getElementById('page-title').innerText = titles[viewName];
 
                 this.renderCurrentView();
@@ -323,9 +391,72 @@
             },
 
             renderCurrentView() {
+                if (this.data.view === 'dashboard') this.dashboard.render();
                 if (this.data.view === 'dms') this.dms.render();
                 if (this.data.view === 'inventory') this.inventory.render();
                 if (this.data.view === 'planner') this.planner.render();
+            },
+
+            // --- MODULE: DASHBOARD ---
+            dashboard: {
+                render() {
+                    // Update Stats
+                    document.getElementById('stats-dms').innerText = app.data.dms.length;
+                    document.getElementById('stats-inventory').innerText = app.data.inventory.reduce((acc, i) => acc + i.qty, 0);
+                    document.getElementById('stats-planner').innerText = app.data.planner.filter(t => !t.done).length;
+
+                    // Recent DMS
+                    const recentDms = document.getElementById('dashboard-recent-dms');
+                    recentDms.innerHTML = '';
+                    const items = [...app.data.dms].reverse().slice(0, 4);
+
+                    if (items.length === 0) {
+                        recentDms.innerHTML = '<p class="text-zinc-600 text-sm">Keine Dateien vorhanden.</p>';
+                    } else {
+                        items.forEach(item => {
+                            const el = document.createElement('div');
+                            el.className = "flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg cursor-pointer transition-all group";
+                            el.onclick = () => {
+                                app.router('dms');
+                                if(item.type === 'folder') app.dms.openFolder(item.id);
+                            };
+                            el.innerHTML = `
+                                <div class="w-8 h-8 rounded bg-zinc-800 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                    <span class="material-symbols-rounded text-sm ${item.type === 'folder' ? 'text-primary' : 'text-zinc-400'}">
+                                        ${item.type === 'folder' ? 'folder' : 'description'}
+                                    </span>
+                                </div>
+                                <span class="text-sm font-medium">${item.name}</span>
+                                <span class="material-symbols-rounded text-xs text-zinc-600 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward_ios</span>
+                            `;
+                            recentDms.appendChild(el);
+                        });
+                    }
+
+                    // Upcoming Tasks
+                    const tasksDiv = document.getElementById('dashboard-tasks');
+                    tasksDiv.innerHTML = '';
+                    const tasks = app.data.planner.filter(t => !t.done).slice(0, 4);
+
+                    if (tasks.length === 0) {
+                        tasksDiv.innerHTML = '<p class="text-zinc-600 text-sm">Keine anstehenden Aufgaben.</p>';
+                    } else {
+                        tasks.forEach(task => {
+                            const el = document.createElement('div');
+                            el.className = "flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-lg cursor-pointer transition-all group";
+                            el.onclick = () => app.router('planner');
+                            el.innerHTML = `
+                                <div class="w-2 h-2 rounded-full bg-success"></div>
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-medium">${task.title}</span>
+                                    <span class="text-[10px] text-zinc-500">${new Date(task.date).toLocaleDateString('de-DE')}</span>
+                                </div>
+                                <span class="material-symbols-rounded text-xs text-zinc-600 ml-auto opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward_ios</span>
+                            `;
+                            tasksDiv.appendChild(el);
+                        });
+                    }
+                }
             },
 
             // --- MODULE: DMS ---
@@ -385,6 +516,8 @@
                 },
                 goRoot() {
                     app.data.currentFolderId = null;
+                    app.data.search = '';
+                    document.getElementById('global-search').value = '';
                     app.renderCurrentView();
                 },
                 add() {
@@ -486,7 +619,7 @@
                     document.getElementById('planner-count').innerText = openTasks;
 
                     // Sort & Filter
-                    let tasks = app.data.planner.sort((a,b) => (a.done === b.done) ? 0 : a.done ? 1 : -1);
+                    let tasks = [...app.data.planner].sort((a,b) => (a.done === b.done) ? 0 : a.done ? 1 : -1);
                     if(app.data.search) tasks = tasks.filter(t => t.title.toLowerCase().includes(app.data.search));
 
                     tasks.forEach(task => {
@@ -523,15 +656,19 @@
                     if(t) { t.done = !t.done; app.save(); }
                 },
                 delete(id) {
-                    app.data.planner = app.data.planner.filter(i => i.id !== id);
-                    app.save();
+                    if(confirm('Aufgabe wirklich löschen?')) {
+                        app.data.planner = app.data.planner.filter(i => i.id !== id);
+                        app.save();
+                    }
                 }
             },
 
             // --- UI HELPERS ---
             ui: {
                 openCurrentModal() {
-                    const view = app.data.view;
+                    let view = app.data.view;
+                    if (view === 'dashboard') view = 'planner'; // Default to planner in dashboard
+
                     document.getElementById('modal-overlay').classList.remove('hidden');
                     document.getElementById('modal-overlay').classList.add('flex');
                     
