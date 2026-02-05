@@ -11,6 +11,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
 
+    <!-- GSAP for High-End Animations -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
     <style>
         /* --- CORE VARIABLES & THEME --- */
         :root {
@@ -217,12 +220,11 @@
         .news-card {
             border-radius: 12px;
             overflow: hidden;
-            transition: transform 0.3s, box-shadow 0.3s;
+            transition: border-color 0.3s;
             cursor: pointer;
             position: relative;
         }
         .news-card:hover {
-            transform: translateY(-5px);
             box-shadow: var(--shadow-neon);
             border-color: var(--primary);
         }
@@ -376,6 +378,33 @@
         @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .chat-user { color: var(--highlight); font-weight: 700; font-size: 0.8rem; display: block; margin-bottom: 2px; }
 
+        /* News Ticker */
+        .ticker-container {
+            width: 100%;
+            background: rgba(138, 43, 226, 0.1);
+            border-bottom: 1px solid var(--primary);
+            overflow: hidden;
+            white-space: nowrap;
+            padding: 8px 0;
+            margin-bottom: 20px;
+        }
+        .ticker-content {
+            display: inline-block;
+            padding-left: 100%;
+            animation: ticker 30s linear infinite;
+        }
+        .ticker-item {
+            display: inline-block;
+            padding: 0 40px;
+            font-family: var(--font-head);
+            font-size: 0.9rem;
+            color: var(--highlight);
+        }
+        @keyframes ticker {
+            0% { transform: translate3d(0, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+
         /* --- PROFILE VIEW --- */
         .profile-card {
             display: flex; align-items: center; gap: 20px; padding: 25px; margin-bottom: 25px;
@@ -483,6 +512,31 @@
         }
         @keyframes shake { 10%, 90% { transform: translate3d(-51%, -1px, 0); } 20%, 80% { transform: translate3d(-49%, 2px, 0); } 30%, 50%, 70% { transform: translate3d(-52%, -4px, 0); } 40%, 60% { transform: translate3d(-48%, 4px, 0); } }
 
+        /* Glitch Effect */
+        .glitch-text {
+            position: relative;
+            animation: glitch 2s infinite;
+        }
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+
+        /* Skeleton Loading */
+        .skeleton {
+            background: linear-gradient(90deg, #111 25%, #222 50%, #111 75%);
+            background-size: 200% 100%;
+            animation: skeleton-load 1.5s infinite;
+        }
+        @keyframes skeleton-load {
+            from { background-position: 200% 0; }
+            to { background-position: -200% 0; }
+        }
+
     </style>
 </head>
 <body>
@@ -554,6 +608,12 @@
 
     <!-- VIEW: LIVE -->
     <section id="live" class="view-section hidden">
+        <div class="ticker-container">
+            <div class="ticker-content" id="live-ticker">
+                <!-- Ticker items -->
+            </div>
+        </div>
+
         <div class="video-player-frame">
             <video loop muted autoplay style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;">
                 <!-- Dummy Video Background -->
@@ -668,9 +728,9 @@
     <!-- POPUP: BREAKING NEWS -->
     <div id="breaking-popup" class="breaking-popup hidden">
         <div style="display: flex; justify-content: center; margin-bottom: 10px;">
-            <span class="material-symbols-outlined" style="font-size: 48px; color: var(--alert);">warning</span>
+            <span class="material-symbols-outlined glitch-text" style="font-size: 48px; color: var(--alert);">warning</span>
         </div>
-        <h2 class="text-alert" style="font-family: var(--font-head); margin: 0 0 10px 0;">SYSTEM ALERT</h2>
+        <h2 class="text-alert glitch-text" style="font-family: var(--font-head); margin: 0 0 10px 0;">SYSTEM ALERT</h2>
         <h3 style="margin: 0 0 15px 0;">GLOBAL ENERGY SPIKE DETECTED</h3>
         <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 20px;">Unprecedented surge in sector 4 grid. Immediate attention required.</p>
         
@@ -706,18 +766,9 @@
 
 <script>
     /* --- DATA STORE --- */
-    const db = {
-        news: [
-            { id: 0, title: "CYBERNETIC AUGMENTATION ACT PASSED", region: "NEO TOKYO", date: "2077-11-02", cat: "POLITICS", img: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=600&q=80", content: "In a historic vote, the council has approved the unrestricted use of Grade-4 implants..." },
-            { id: 1, title: "SYNTHETIC LIFEFORMS DEMAND RIGHTS", region: "BERLIN", date: "2077-11-01", cat: "SOCIETY", img: "https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?auto=format&fit=crop&w=600&q=80", content: "Thousands of androids gathered at the Brandenburg Gate today..." },
-            { id: 2, title: "OFF-WORLD COLONY GOES SILENT", region: "MARS", date: "2077-10-30", cat: "ALERT", img: "https://images.unsplash.com/photo-1614728853913-1e32005e3078?auto=format&fit=crop&w=600&q=80", content: "Signal lost from outpost Alpha. Recon drones dispatched..." },
-            { id: 3, title: "QUANTUM NET SPEED RECORD", region: "SILICON V.", date: "2077-10-28", cat: "TECH", img: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80", content: "Data transfer rates have exceeded theoretical limits..." }
-        ],
-        timeline: [
-            { time: "14:00", title: "Protocol Initiated", desc: "System boot sequence complete." },
-            { time: "12:30", title: "Market Crash", desc: "Credits value dropped by 15%." },
-            { time: "09:00", title: "Treaty Signed", desc: "Peace agreement ratified in sector 9." }
-        ],
+    let db = {
+        news: [],
+        timeline: [],
         chats: [
             { user: "Ghost_01", msg: "Did you see the flux?" },
             { user: "NeonRider", msg: "Signal is clean today." },
@@ -725,53 +776,182 @@
         ]
     };
 
+    const API_URL = 'https://ok.surf/api/v1/cors/news-feed';
+    const CACHE_KEY = 'nexus_news_data';
+    const CACHE_TIME_KEY = 'nexus_news_timestamp';
+    const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+
+    async function fetchNews() {
+        const now = Date.now();
+        const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+        const cachedData = localStorage.getItem(CACHE_KEY);
+
+        if (cachedTime && cachedData && (now - cachedTime < REFRESH_INTERVAL)) {
+            console.log("Using cached news data");
+            processNewsData(JSON.parse(cachedData));
+            return;
+        }
+
+        console.log("Fetching fresh news...");
+        try {
+            const response = await fetch(API_URL);
+            const data = await response.json();
+
+            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            localStorage.setItem(CACHE_TIME_KEY, now.toString());
+
+            processNewsData(data);
+        } catch (error) {
+            console.error("Failed to fetch news:", error);
+            if (cachedData) {
+                processNewsData(JSON.parse(cachedData));
+            }
+        }
+    }
+
+    function processNewsData(data) {
+        let flattenedNews = [];
+        let id = 0;
+
+        const categoryMap = {
+            'World': 'GLOBAL',
+            'Business': 'FINANCE',
+            'Technology': 'TECH',
+            'Science': 'SCIENCE',
+            'Health': 'BIO',
+            'Entertainment': 'MEDIA',
+            'Sports': 'ARENA'
+        };
+
+        for (const [cat, items] of Object.entries(data)) {
+            items.forEach(item => {
+                flattenedNews.push({
+                    id: id++,
+                    title: item.title,
+                    region: item.source,
+                    date: new Date().toLocaleDateString(), // API doesn't provide date, use current
+                    cat: categoryMap[cat] || cat.toUpperCase(),
+                    img: item.og || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
+                    content: `Source: ${item.source}. Full report available via encrypted link. Accessing data stream from ${cat} sector...`,
+                    link: item.link
+                });
+            });
+        }
+
+        // Sort by ID (arbitrary) or shuffle for variety
+        db.news = flattenedNews.slice(0, 50);
+
+        // Generate Timeline from news
+        db.timeline = db.news.slice(0, 10).map((n, index) => ({
+            time: `${12 - index}:00`,
+            title: n.title,
+            desc: `Data packet received from ${n.region}. Source verified.`
+        }));
+
+        renderNews();
+        renderTimeline();
+    }
+
     /* --- CORE FUNCTIONS --- */
     
-    // Navigation Logic
+    // Navigation Logic with GSAP (Snappy Transitions)
     function navTo(viewId) {
-        // Hide all views
-        document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+        const currentView = document.querySelector('.view-section:not(.hidden)');
+        const targetView = document.getElementById(viewId);
         
-        // Show target
-        const target = document.getElementById(viewId);
-        target.classList.remove('hidden');
-        
-        // Reset Animation hack
-        target.style.animation = 'none';
-        target.offsetHeight; /* trigger reflow */
-        target.style.animation = 'fadeInView 0.6s var(--ease-tech) forwards';
+        if (currentView === targetView) return;
+
+        // Animate Out
+        if (currentView) {
+            gsap.to(currentView, {
+                opacity: 0,
+                y: -10,
+                duration: 0.2,
+                ease: "power2.in",
+                onComplete: () => {
+                    currentView.classList.add('hidden');
+                    showTarget();
+                }
+            });
+        } else {
+            showTarget();
+        }
+
+        function showTarget() {
+            targetView.classList.remove('hidden');
+            gsap.fromTo(targetView,
+                { opacity: 0, y: 10, scale: 0.98 },
+                { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power2.out" }
+            );
+        }
 
         // Update Dock
         document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
         const navBtn = document.getElementById('nav-' + viewId);
-        if(navBtn) navBtn.classList.add('active');
+        if(navBtn) {
+            navBtn.classList.add('active');
+            gsap.from(navBtn.querySelector('.material-symbols-outlined'), { scale: 0.5, duration: 0.2, ease: "back.out(2)" });
+        }
         
-        window.scrollTo(0,0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Re-init context specific features if needed
+        if (viewId === 'live') initLive();
+    }
+
+    // Micro-interactions
+    function initInteractions() {
+        document.addEventListener('mouseover', (e) => {
+            const card = e.target.closest('.news-card');
+            if (card) {
+                gsap.to(card, { y: -5, duration: 0.2, ease: "power2.out" });
+            }
+        });
+        document.addEventListener('mouseout', (e) => {
+            const card = e.target.closest('.news-card');
+            if (card) {
+                gsap.to(card, { y: 0, duration: 0.2, ease: "power2.in" });
+            }
+        });
     }
 
     // Load News to Dashboard
     function renderNews() {
         const container = document.getElementById('news-feed');
         const archive = document.getElementById('archive-feed');
-        let html = '';
+        if (!container) return;
         
-        db.news.forEach(item => {
-            html += `
-            <div class="glass-panel news-card" onclick="loadDetail(${item.id})">
-                <img src="${item.img}" class="news-thumb">
-                <div class="card-body">
-                    <span class="card-cat">${item.cat}</span>
-                    <h4 class="card-title">${item.title}</h4>
-                    <div class="card-meta">
-                        <span>${item.region}</span>
-                        <span>${item.date}</span>
+        let html = '';
+        if (db.news.length === 0) {
+            html = '<div class="skeleton" style="height: 200px; width: 100%; border-radius: 12px;"></div>'.repeat(3);
+        } else {
+            db.news.forEach(item => {
+                html += `
+                <div class="glass-panel news-card" onclick="loadDetail(${item.id})">
+                    <img src="${item.img}" class="news-thumb" onerror="this.src='https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80'">
+                    <div class="card-body">
+                        <span class="card-cat">${item.cat}</span>
+                        <h4 class="card-title">${item.title}</h4>
+                        <div class="card-meta">
+                            <span>${item.region}</span>
+                            <span>${item.date}</span>
+                        </div>
                     </div>
-                </div>
-            </div>`;
-        });
+                </div>`;
+            });
+        }
         
         container.innerHTML = html;
-        archive.innerHTML = html; // Populate archive too
+        if (archive) archive.innerHTML = html;
+
+        // Animate entrance
+        gsap.from(".news-card", {
+            y: 30,
+            opacity: 0,
+            duration: 0.4,
+            stagger: 0.05,
+            ease: "power2.out"
+        });
     }
 
     // Load Detail View
@@ -792,12 +972,20 @@
     
     // Wrapper for hotspot clicks
     function loadNews(index) {
-        loadDetail(index);
+        // Find news in 'GLOBAL' category for hotspots
+        const globalNews = db.news.filter(n => n.cat === 'GLOBAL');
+        if (globalNews.length > index) {
+            loadDetail(globalNews[index].id);
+        } else if (db.news.length > index) {
+            loadDetail(db.news[index].id);
+        }
     }
 
     // Render Timeline
     function renderTimeline() {
         const container = document.getElementById('timeline-container');
+        if (!container) return;
+        container.innerHTML = '';
         db.timeline.forEach(item => {
             container.innerHTML += `
             <div class="glass-panel timeline-node" style="padding: 15px; border-radius: 8px;">
@@ -821,29 +1009,47 @@
     }
 
     // Live Simulations
+    let liveIntervals = [];
     function initLive() {
+        // Clear previous intervals if any
+        liveIntervals.forEach(clearInterval);
+        liveIntervals = [];
+
+        // Ticker
+        const ticker = document.getElementById('live-ticker');
+        if (ticker) {
+            ticker.innerHTML = db.news.map(n => `<span class="ticker-item">${n.title} [//] ${n.region}</span>`).join('');
+        }
+
         // Viewers
-        setInterval(() => {
+        const viewerInt = setInterval(() => {
             const el = document.getElementById('live-viewers');
-            let val = parseFloat(el.innerText);
-            val += (Math.random() - 0.5);
-            el.innerText = val.toFixed(1) + "K";
+            if (el) {
+                let val = parseFloat(el.innerText);
+                val += (Math.random() - 0.5);
+                el.innerText = val.toFixed(1) + "K";
+            }
         }, 1500);
+        liveIntervals.push(viewerInt);
 
         // Chat
         const chatContainer = document.getElementById('chat-container');
-        
-        // Initial load
-        db.chats.forEach(c => addChat(c.user, c.msg));
+        if (chatContainer) {
+            chatContainer.innerHTML = '';
+            // Initial load
+            db.chats.forEach(c => addChat(c.user, c.msg));
+        }
 
         // Random new msg
-        setInterval(() => {
+        const chatInt = setInterval(() => {
             const users = ["Runner", "Net_Zero", "ChromeHeart", "V_"];
             const msgs = ["System looks stable.", "Any updates?", "Who is watching?", "Signal is strong."];
             addChat(users[Math.floor(Math.random()*users.length)], msgs[Math.floor(Math.random()*msgs.length)]);
         }, 3500);
+        liveIntervals.push(chatInt);
 
         function addChat(u, m) {
+            if (!chatContainer) return;
             const div = document.createElement('div');
             div.className = 'chat-bubble';
             div.innerHTML = `<span class="chat-user">${u}:</span> ${m}`;
@@ -852,15 +1058,61 @@
         }
     }
 
+    // Archive Search
+    function initSearch() {
+        const input = document.querySelector('#archive .tech-input');
+        if (!input) return;
+
+        input.addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = db.news.filter(n =>
+                n.title.toLowerCase().includes(term) ||
+                n.region.toLowerCase().includes(term) ||
+                n.cat.toLowerCase().includes(term)
+            );
+
+            const container = document.getElementById('archive-feed');
+            let html = '';
+            filtered.forEach(item => {
+                html += `
+                <div class="glass-panel news-card" onclick="loadDetail(${item.id})">
+                    <img src="${item.img}" class="news-thumb" onerror="this.src='https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80'">
+                    <div class="card-body">
+                        <span class="card-cat">${item.cat}</span>
+                        <h4 class="card-title">${item.title}</h4>
+                        <div class="card-meta">
+                            <span>${item.region}</span>
+                            <span>${item.date}</span>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        });
+    }
+
     /* --- INITIALIZATION --- */
     window.addEventListener('DOMContentLoaded', () => {
-        renderNews();
-        renderTimeline();
+        fetchNews();
         initLive();
+        initSearch();
+        initInteractions();
+
+        // 30-minute auto-refresh check
+        setInterval(() => {
+            fetchNews();
+        }, 60000); // Check every minute, fetchNews handles the 30min logic
         
         // Trigger Breaking News after 8s
         setTimeout(() => {
-            document.getElementById('breaking-popup').classList.remove('hidden');
+            if (db.news.length > 0) {
+                const breaking = db.news[Math.floor(Math.random() * db.news.length)];
+                const popup = document.getElementById('breaking-popup');
+                popup.querySelector('h3').innerText = breaking.title;
+                popup.querySelector('p').innerText = breaking.content;
+                popup.classList.remove('hidden');
+                gsap.from(popup, { scale: 0.8, opacity: 0, duration: 0.5, ease: "back.out(1.7)" });
+            }
         }, 8000);
     });
 
