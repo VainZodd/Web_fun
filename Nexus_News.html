@@ -225,6 +225,12 @@
             border-radius: 50%;
             box-shadow: 0 0 10px var(--accent);
             cursor: pointer;
+            transition: transform 0.2s var(--ease-tech);
+        }
+        .hotspot:hover {
+            transform: scale(2);
+            box-shadow: 0 0 20px var(--accent);
+            z-index: 100;
         }
         .hotspot::after {
             content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
@@ -664,14 +670,35 @@
             </div>
         </div>
 
-        <!-- SYSTEM CONSOLE LOGS -->
-        <div class="glass-panel" style="border-radius: 12px; margin-bottom: 25px; padding: 12px; height: 120px; display: flex; flex-direction: column; overflow: hidden; border-left: 3px solid var(--primary);">
-            <div style="font-family: var(--font-head); font-size: 0.6rem; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between;">
-                <span>SYSTEM_CONSOLE // NEURAL_FEED</span>
-                <span id="console-latency">LATENCY: 24ms</span>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
+            <!-- SYSTEM CONSOLE LOGS -->
+            <div class="glass-panel" style="border-radius: 12px; padding: 12px; height: 140px; display: flex; flex-direction: column; overflow: hidden; border-left: 3px solid var(--primary);">
+                <div style="font-family: var(--font-head); font-size: 0.6rem; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between;">
+                    <span>SYSTEM_CONSOLE // FEED</span>
+                    <span id="console-latency">LATENCY: 24ms</span>
+                </div>
+                <div id="system-console" style="flex: 1; font-family: 'Courier New', monospace; font-size: 0.65rem; color: var(--highlight); overflow-y: auto; scrollbar-width: none;">
+                    <!-- Logs injected -->
+                </div>
             </div>
-            <div id="system-console" style="flex: 1; font-family: 'Courier New', monospace; font-size: 0.7rem; color: var(--highlight); overflow-y: auto; scrollbar-width: none;">
-                <!-- Logs injected -->
+
+            <!-- NEURAL GRID STATUS -->
+            <div class="glass-panel" style="border-radius: 12px; padding: 12px; height: 140px; border-right: 3px solid var(--accent);">
+                <div style="font-family: var(--font-head); font-size: 0.6rem; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 1px;">NEURAL_GRID // STATUS</div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div class="stat-bar-container" style="margin: 0;">
+                        <div class="stat-label" style="font-size: 0.6rem;"><span>BANDWIDTH</span><span id="bw-val">84%</span></div>
+                        <div class="bar-track" style="height: 3px;"><div class="bar-fill" id="bw-fill" style="width: 84%;"></div></div>
+                    </div>
+                    <div class="stat-bar-container" style="margin: 0;">
+                        <div class="stat-label" style="font-size: 0.6rem;"><span>ENCRYPTION</span><span>AES-256</span></div>
+                        <div class="bar-track" style="height: 3px;"><div class="bar-fill" style="width: 100%; background: var(--success);"></div></div>
+                    </div>
+                    <div class="stat-bar-container" style="margin: 0;">
+                        <div class="stat-label" style="font-size: 0.6rem;"><span>UPLINK STABILITY</span><span id="stab-val">98.2%</span></div>
+                        <div class="bar-track" style="height: 3px;"><div class="bar-fill" id="stab-fill" style="width: 98%; background: var(--success);"></div></div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -735,11 +762,13 @@
                 <div id="live-video-placeholder"></div>
             </div>
 
-            <div id="signal-loss-hud" class="hidden flex-center" style="position: absolute; inset: 0; z-index: 12; background: rgba(20, 0, 0, 0.6); flex-direction: column; text-align: center;">
-                <span class="material-symbols-outlined" style="font-size: 48px; color: var(--alert); margin-bottom: 15px;">signal_disconnected</span>
-                <div style="font-family: var(--font-head); color: var(--alert); letter-spacing: 2px;">UPLINK_BLOCKED</div>
-                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 10px;">ENCRYPTION PROTOCOL MISMATCH [ERR_150]</div>
-                <button class="btn-tech" style="width: auto; margin-top: 20px; padding: 8px 20px;" onclick="openExternalStream()">MANUAL_OVERRIDE</button>
+            <div id="signal-loss-hud" class="hidden flex-center" style="position: absolute; inset: 0; z-index: 12; background: rgba(5, 5, 5, 0.95); flex-direction: column; text-align: center; backdrop-filter: blur(10px);">
+                <span class="material-symbols-outlined" style="font-size: 48px; color: var(--alert); margin-bottom: 15px; text-shadow: 0 0 20px var(--alert);">signal_disconnected</span>
+                <div style="font-family: var(--font-head); color: var(--alert); letter-spacing: 4px; font-weight: 900; font-size: 1.2rem;">UPLINK_BLOCKED</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 10px; font-family: var(--font-head);">ENCRYPTION PROTOCOL MISMATCH [ERR_153]</div>
+                <div style="width: 100px; height: 1px; background: var(--alert); margin: 20px 0; opacity: 0.5;"></div>
+                <button class="btn-tech" style="width: auto; padding: 12px 30px; border-radius: 4px; background: var(--primary); box-shadow: 0 0 20px var(--primary);" onclick="openExternalStream()">MANUAL_OVERRIDE</button>
+                <div style="font-size: 0.6rem; color: var(--text-muted); margin-top: 15px; letter-spacing: 1px;">EXTERNAL NEURAL RELAY REQUIRED</div>
             </div>
 
             <div class="live-indicator" style="z-index: 15;"><div class="live-dot"></div> LIVE FEED</div>
@@ -758,11 +787,13 @@
             </div>
         </div>
 
-        <div class="player-controls">
+        <div class="player-controls" style="overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;">
             <button class="ctrl-btn" onclick="toggleMute(this)"><span class="material-symbols-outlined" style="font-size:14px;">volume_off</span> MUTE</button>
             <button class="ctrl-btn" onclick="toggleRec(this)"><span class="material-symbols-outlined" style="font-size:14px;">fiber_manual_record</span> REC</button>
             <button class="ctrl-btn" onclick="toggleZoom(this)"><span class="material-symbols-outlined" style="font-size:14px;">zoom_in</span> ZOOM</button>
-            <button class="ctrl-btn" onclick="initInteractions()"><span class="material-symbols-outlined" style="font-size:14px;">refresh</span> SYNC</button>
+            <button class="ctrl-btn" onclick="cycleRes(this)">RES: 4K</button>
+            <button class="ctrl-btn" onclick="cycleFps(this)">FPS: 60</button>
+            <button class="ctrl-btn" onclick="switchStream(activeStreamId, true)"><span class="material-symbols-outlined" style="font-size:14px;">refresh</span> SYNC</button>
         </div>
 
         <div style="display: flex; gap: 10px; margin-bottom: 25px;">
@@ -1321,17 +1352,23 @@
         function showTarget() {
             targetView.classList.remove('hidden');
 
-            // Neural Handshake Glitch Transition
-            const handshakeTl = gsap.timeline();
-            handshakeTl.fromTo(targetView,
-                { opacity: 0, scaleY: 1.5, skewX: 10, filter: "hue-rotate(90deg) brightness(3)" },
-                { opacity: 1, scaleY: 1, skewX: 0, filter: "hue-rotate(0deg) brightness(1)", duration: 0.15, ease: "power4.out" }
+            // Snappy Neural Handshake Transition
+            const tl = gsap.timeline();
+            tl.fromTo(targetView,
+                { opacity: 0, x: 30, skewX: 20, filter: "brightness(5) contrast(3) hue-rotate(180deg)" },
+                { opacity: 1, x: 0, skewX: 0, filter: "brightness(1) contrast(1) hue-rotate(0deg)", duration: 0.12, ease: "power4.out" }
             )
-            .fromTo(targetView,
-                { x: 20 },
-                { x: 0, duration: 0.1, ease: "rough({ strength: 2, points: 10, template: power2.inout, taper: 'none', randomize: true })" },
-                "-=0.05"
-            );
+            .to(targetView, { x: -5, duration: 0.04, ease: "power2.inOut" })
+            .to(targetView, { x: 0, duration: 0.04, ease: "power2.inOut" });
+
+            // Ripple effect on active nav item
+            const activeNav = document.getElementById('nav-' + viewId);
+            if (activeNav) {
+                gsap.fromTo(activeNav,
+                    { boxShadow: "0 0 0px var(--primary)" },
+                    { boxShadow: "0 0 30px var(--accent)", duration: 0.2, yoyo: true, repeat: 1 }
+                );
+            }
         }
 
         // Update Dock
@@ -1349,53 +1386,63 @@
     }
 
     // System Console Logic
-    function updateConsoleLogs() {
+    function addSystemLog(lvl, sensor, action) {
         const consoleEl = document.getElementById('system-console');
         if (!consoleEl) return;
 
-        const LOG_LEVELS = ["INFO", "DEBUG", "WARN", "CRIT", "SYNC"];
+        const ts = new Date().toLocaleTimeString();
+        const val = Math.floor(Math.random() * 899) + 100;
+
+        const div = document.createElement('div');
+        div.style.marginBottom = "2px";
+        div.style.opacity = "0";
+        div.innerHTML = `<span style="color:var(--text-muted)">[${ts}]</span> <span style="color:${lvl === 'CRIT' ? 'var(--alert)' : 'var(--primary)'}">${lvl}::${sensor}</span> >> ${action} ${val ? `(v${val})` : ''}`;
+
+        consoleEl.appendChild(div);
+        gsap.fromTo(div,
+            { opacity: 0, x: -5, scaleX: 1.2 },
+            { opacity: 1, x: 0, scaleX: 1, duration: 0.15, ease: "power4.out" }
+        );
+
+        if (consoleEl.children.length > 25) consoleEl.removeChild(consoleEl.firstChild);
+        consoleEl.scrollTop = consoleEl.scrollHeight;
+
+        const latEl = document.getElementById('console-latency');
+        if (latEl) latEl.innerText = `LATENCY: ${Math.floor(Math.random() * 40) + 10}ms`;
+    }
+
+    function updateConsoleLogs() {
+        const LOG_LEVELS = ["INFO", "DEBUG", "WARN", "SYNC"];
         const SENSORS = ["NEURAL_LINK", "QUANTUM_RELAY", "GRID_ANALYZER", "CORE_BUFFER", "SCRAPER_BOT_7"];
         const ACTIONS = ["CONNECTED", "DISCONNECTED", "PACKET_LOSS", "LATENCY_SPIKE", "ENCRYPTION_ACTIVE", "DATA_HARVESTED", "REDUNDANCY_CHECK", "BYPASS_ATTEMPT"];
 
-        function addLog() {
-            const ts = new Date().toLocaleTimeString();
-            const lvl = LOG_LEVELS[Math.floor(Math.random() * LOG_LEVELS.length)];
-            const sensor = SENSORS[Math.floor(Math.random() * SENSORS.length)];
-            const action = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
-            const val = Math.floor(Math.random() * 899) + 100;
-
-            const div = document.createElement('div');
-            div.style.marginBottom = "2px";
-            div.style.opacity = "0";
-            div.innerHTML = `<span style="color:var(--text-muted)">[${ts}]</span> <span style="color:var(--primary)">${lvl}::${sensor}</span> >> ${action} (v${val})`;
-
-            consoleEl.appendChild(div);
-            // Enhanced Glitch Entrance
-            gsap.fromTo(div,
-                { opacity: 0, x: -5, scaleX: 1.2 },
-                { opacity: 1, x: 0, scaleX: 1, duration: 0.15, ease: "power4.out" }
-            );
-
-            if (consoleEl.children.length > 20) {
-                consoleEl.removeChild(consoleEl.firstChild);
-            }
-
-            consoleEl.scrollTop = consoleEl.scrollHeight;
-
-            // Update Latency
-            const latEl = document.getElementById('console-latency');
-            if (latEl) latEl.innerText = `LATENCY: ${Math.floor(Math.random() * 40) + 10}ms`;
+        // Initial logs
+        for(let i=0; i<8; i++) {
+            addSystemLog(LOG_LEVELS[i%4], SENSORS[i%5], ACTIONS[i%8]);
         }
 
-        // Initial logs
-        for(let i=0; i<5; i++) addLog();
-
-        // Loop
-        setInterval(addLog, 2000);
+        // Accelerated Loop for "Snappy" feel
+        setInterval(() => {
+            addSystemLog(
+                LOG_LEVELS[Math.floor(Math.random() * LOG_LEVELS.length)],
+                SENSORS[Math.floor(Math.random() * SENSORS.length)],
+                ACTIONS[Math.floor(Math.random() * ACTIONS.length)]
+            );
+        }, 800);
     }
 
     // Micro-interactions
     function initInteractions() {
+        // Hotspot Neural Pulse
+        document.querySelectorAll('.hotspot').forEach(hs => {
+            hs.addEventListener('mouseenter', () => {
+                gsap.to(hs, { boxShadow: "0 0 30px var(--primary)", duration: 0.1 });
+            });
+            hs.addEventListener('mouseleave', () => {
+                gsap.to(hs, { boxShadow: "0 0 10px var(--accent)", duration: 0.2 });
+            });
+        });
+
         // News Card Glitch Hover
         document.addEventListener('mouseover', (e) => {
             const card = e.target.closest('.news-card, .nav-item');
@@ -1636,17 +1683,20 @@
 
         const user = NexusAuth.currentUser;
         container.innerHTML = `
-            <div class="glass-panel profile-card" style="border-radius: 16px; position: relative;">
-                <button onclick="NexusAuth.logout()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--alert); cursor: pointer; display: flex; align-items: center; gap: 5px;">
-                    <span class="material-symbols-outlined" style="font-size: 18px;">logout</span> EXIT
+        <div class="glass-panel profile-card" style="border-radius: 16px; position: relative; border-bottom: 2px solid var(--primary);">
+            <button onclick="NexusAuth.logout()" style="position: absolute; top: 15px; right: 15px; background: none; border: none; color: var(--alert); cursor: pointer; display: flex; align-items: center; gap: 5px; font-family: var(--font-head); font-size: 0.6rem;">
+                <span class="material-symbols-outlined" style="font-size: 14px;">logout</span> TERMINATE_SESSION
                 </button>
                 <div class="avatar-ring">
                     <img src="${user.avatar}" alt="User">
                     <div class="status-dot"></div>
                 </div>
-                <div>
-                    <h2 style="font-family: var(--font-head); margin: 0;">${user.username.toUpperCase()}</h2>
-                    <span style="color: var(--accent); font-size: 0.8rem; letter-spacing: 1px;">${user.role}</span>
+            <div style="flex: 1;">
+                <h2 style="font-family: var(--font-head); margin: 0; letter-spacing: 2px;">${escapeHTML(user.username.toUpperCase())}</h2>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="color: var(--accent); font-size: 0.7rem; letter-spacing: 1px; font-weight: 700;">${user.role}</span>
+                    <span style="color: var(--text-muted); font-size: 0.6rem; font-family: monospace;">[SIG: ${btoa(user.username).slice(0,8)}]</span>
+                </div>
                 </div>
             </div>
 
@@ -1749,6 +1799,26 @@
 
     // YouTube API Callback
     function onYouTubeIframeAPIReady() {
+        initYTPlayer();
+    }
+
+    function initYTPlayer() {
+        const stream = STREAMS[activeStreamId];
+        const container = document.getElementById('video-container');
+        if (!container) return;
+
+        container.innerHTML = '<div id="live-video-placeholder"></div>';
+
+        // Automatic Fallback if stream fails to play
+        const loadTimeout = setTimeout(() => {
+            const hud = document.getElementById('signal-loss-hud');
+            // If after 7 seconds it's not playing, show HUD
+            if (hud && (!ytPlayer || typeof ytPlayer.getPlayerState !== 'function' || ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING)) {
+                hud.classList.remove('hidden');
+                gsap.from(hud, { opacity: 0, duration: 0.5 });
+            }
+        }, 7000);
+
         ytPlayer = new YT.Player('live-video-placeholder', {
             height: '100%',
             width: '100%',
@@ -1761,23 +1831,38 @@
                 'iv_load_policy': 3,
                 'playsinline': 1,
                 'enablejsapi': 1,
-                'origin': window.location.origin
+                'origin': window.location.origin || '*'
             },
+            videoId: '', // Will use URL for live
             events: {
                 'onReady': (event) => {
                     isPlayerReady = true;
-                    // Initial stream load
-                    switchStream(activeStreamId, true);
+                    // Attempt to load the live stream via URL manipulation on the internal iframe
+                    // or just use the official embed URL which is better for live
+                    const iframe = event.target.getIframe();
+                    if (iframe) {
+                        iframe.src = `https://www.youtube.com/embed/live_stream?channel=${stream.cid}&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(window.location.origin || '*')}`;
+                    }
                 },
                 'onError': (e) => {
-                    console.error("YT_PLAYER_ERROR:", e.data);
                     const label = document.getElementById('stream-status-label');
+                    const errorMsg = `UPLINK_FAILURE [CODE_${e.data}]`;
+
                     if (label) {
-                        label.innerText = "LINK FAILURE // ERR_" + e.data;
+                        label.innerText = errorMsg;
                         label.style.color = "var(--alert)";
                     }
-                    if (e.data === 150 || e.data === 101 || e.data === 5) {
-                        document.getElementById('signal-loss-hud').classList.remove('hidden');
+
+                    // Log to System Console
+                    addSystemLog("CRIT", "UPLINK_RELAY", errorMsg);
+
+                    // Handle restriction errors (150, 101, 5, and the user reported 153)
+                    if ([150, 101, 5, 153, 2, 100].includes(e.data)) {
+                        const hud = document.getElementById('signal-loss-hud');
+                        if (hud) {
+                            hud.classList.remove('hidden');
+                            gsap.fromTo(hud, { opacity: 0 }, { opacity: 1, duration: 0.5 });
+                        }
                     }
                     // Trigger glitch on error
                     gsap.to('#static-noise', { opacity: 0.6, duration: 0.5, repeat: 3, yoyo: true });
@@ -1790,11 +1875,11 @@
                         label.innerText = "BUFFERING...";
                         label.style.color = "var(--primary)";
                     } else if (e.data === YT.PlayerState.PLAYING) {
+                        clearTimeout(loadTimeout);
                         label.innerText = "SIGNAL STABLE";
                         label.style.color = "var(--success)";
                         gsap.to('#static-noise', { opacity: 0, duration: 0.2 });
-                    } else if (e.data === YT.PlayerState.UNSTARTED) {
-                        label.innerText = "CONNECTING...";
+                        document.getElementById('signal-loss-hud').classList.add('hidden');
                     }
                 }
             }
@@ -1917,24 +2002,21 @@
         // Technical HUD Update
         const statusEl = document.getElementById('stream-status-label');
         if (statusEl) {
-            statusEl.innerText = "SYNCING_LINK...";
+            statusEl.innerText = "UPLINK_INITIALIZING...";
             statusEl.style.color = "var(--primary)";
         }
 
         // 1. Start Transition Effect
         const tl = gsap.timeline();
-        tl.to(noise, { opacity: 0.8, duration: 0.1, ease: "power4.in" })
-          .to(videoWrap, { filter: "contrast(3) brightness(2) blur(10px)", opacity: 0.3, duration: 0.1 }, 0)
+        tl.to(noise, { opacity: 1, duration: 0.05, ease: "power4.in" })
+          .to(videoWrap, { filter: "brightness(3) contrast(2) grayscale(1)", opacity: 0, duration: 0.05 }, 0)
           .add(() => {
-              // 2. Perform Switch
-              // Try to bypass some embed restrictions by using a different URL format or omitting some params if needed
-              // However, the channel/live_stream is the most reliable for 'latest live'
-              const embedUrl = `https://www.youtube.com/embed/live_stream?channel=${stream.cid}&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&enablejsapi=1&widgetid=1&origin=${encodeURIComponent(window.location.origin)}`;
-
-              const iframe = document.querySelector('#video-container iframe');
-              if (iframe) {
-                  iframe.src = embedUrl;
+              // 2. Perform Switch by re-initializing the player
+              // This ensures Error 153/150 is handled fresh and the API stays connected
+              if (ytPlayer && ytPlayer.destroy) {
+                  ytPlayer.destroy();
               }
+              initYTPlayer();
 
               const nameEl = document.getElementById('stream-name');
               const signalEl = document.getElementById('stream-signal');
@@ -1942,9 +2024,9 @@
               if (nameEl) nameEl.innerText = stream.name;
 
               // Random Technical Data
-              document.getElementById('link-bitrate').innerText = `BITRATE: ${(Math.random() * 50 + 10).toFixed(1)} Mbps`;
-              document.getElementById('link-protocol').innerText = `PROTO: NX-${['SECURED', 'ENCRYPTED', 'GRID', 'NEURAL'][Math.floor(Math.random() * 4)]}`;
-              document.getElementById('stream-encryption').innerText = ["AES-256", "RSA-4096", "QUBIT", "SHR-ECC"][Math.floor(Math.random() * 4)];
+              document.getElementById('link-bitrate').innerText = `BITRATE: ${(Math.random() * 120 + 20).toFixed(1)} Mbps`;
+              document.getElementById('link-protocol').innerText = `PROTO: NX-${['SECURED', 'ENCRYPTED', 'OVERRIDE', 'NEURAL'][Math.floor(Math.random() * 4)]}`;
+              document.getElementById('stream-encryption').innerText = ["AES-GCM", "CHACHA20", "ECC-P521", "POLY1305"][Math.floor(Math.random() * 4)];
 
               // Signal mapping
               const signalPercent = stream.signal * 20 + Math.floor(Math.random() * 10);
@@ -1953,15 +2035,9 @@
                   signalEl.style.color = stream.signal < 2 ? 'var(--alert)' : (stream.signal < 4 ? 'var(--primary)' : 'var(--success)');
               }
           })
-          // 3. End Transition (Wait for load slightly)
-          .to(noise, { opacity: 0, duration: 0.15, delay: 0.3, ease: "power4.out" })
-          .to(videoWrap, { filter: "contrast(1) brightness(1) blur(0px)", opacity: 1, duration: 0.2 }, "-=0.15")
-          .add(() => {
-              if (statusEl && stream.signal >= 3) {
-                  statusEl.innerText = "SIGNAL STABLE";
-                  statusEl.style.color = "var(--success)";
-              }
-          });
+          // 3. End Transition
+          .to(noise, { opacity: 0, duration: 0.2, delay: 0.5, ease: "power4.out" })
+          .to(videoWrap, { filter: "brightness(1) contrast(1) grayscale(0)", opacity: 1, duration: 0.1 }, "-=0.2");
     }
 
     function toggleMute(btn) {
@@ -1992,6 +2068,23 @@
         if (!iframe) return;
         btn.classList.toggle('active');
         gsap.to(iframe, { scale: btn.classList.contains('active') ? 1.4 : 1, duration: 0.2, ease: "power4.out" });
+    }
+
+    function cycleRes(btn) {
+        const res = ["1080p", "1440p", "4K", "8K"];
+        const current = btn.innerText.split(': ')[1];
+        const next = res[(res.indexOf(current) + 1) % res.length];
+        btn.innerText = `RES: ${next}`;
+        document.getElementById('link-resolution').innerText = `RES: ${next} // HDR`;
+        gsap.fromTo(btn, { backgroundColor: "var(--primary)" }, { backgroundColor: "rgba(255,255,255,0.05)", duration: 0.4 });
+    }
+
+    function cycleFps(btn) {
+        const fps = ["24", "30", "60", "120"];
+        const current = btn.innerText.split(': ')[1];
+        const next = fps[(fps.indexOf(current) + 1) % fps.length];
+        btn.innerText = `FPS: ${next}`;
+        gsap.fromTo(btn, { backgroundColor: "var(--accent)" }, { backgroundColor: "rgba(255,255,255,0.05)", duration: 0.4 });
     }
 
     function addChat(u, m, isBot = false) {
@@ -2038,6 +2131,24 @@
     }
 
     /* --- INITIALIZATION --- */
+    // Neural Grid Dynamic Updates
+    function updateNeuralGrid() {
+        setInterval(() => {
+            const bw = Math.floor(Math.random() * 30) + 60;
+            const stab = (95 + Math.random() * 4.9).toFixed(1);
+
+            const bwFill = document.getElementById('bw-fill');
+            const bwVal = document.getElementById('bw-val');
+            const stabFill = document.getElementById('stab-fill');
+            const stabVal = document.getElementById('stab-val');
+
+            if (bwFill) bwFill.style.width = bw + '%';
+            if (bwVal) bwVal.innerText = bw + '%';
+            if (stabFill) stabFill.style.width = stab + '%';
+            if (stabVal) stabVal.innerText = stab + '%';
+        }, 3000);
+    }
+
     window.addEventListener('DOMContentLoaded', async () => {
         // Boot Sequence
         const bootBar = document.getElementById('boot-bar');
@@ -2067,6 +2178,7 @@
         initSearch();
         initInteractions();
         updateConsoleLogs();
+        updateNeuralGrid();
 
         // 30-minute auto-refresh check
         setInterval(() => {
