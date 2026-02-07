@@ -1132,7 +1132,7 @@
             ...n,
             id: i,
             sector_id: Math.random().toString(16).slice(2, 6).toUpperCase(),
-            signature: btoa(n.title).slice(0, 12)
+            signature: btoa(unescape(encodeURIComponent(n.title))).slice(0, 12)
         }));
 
         // Check for updates to trigger breaking news (only on fresh fetches)
@@ -1955,9 +1955,13 @@
               });
 
         NexusAuth.init();
-        await fetchNews();
+        try {
+            await fetchNews();
+        } catch (e) {
+            console.error("INITIAL_SYNC_FAILURE:", e);
+        }
 
-        // Reveal App only after sync
+        // Reveal App even if sync fails
         bootTl.to(bootLoader, { opacity: 0, duration: 0.4, delay: 0.3, onComplete: () => bootLoader.remove() });
         initLive();
         initSearch();
