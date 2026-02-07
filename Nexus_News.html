@@ -509,17 +509,23 @@
         }
         .btn-tech:hover { background: var(--accent); box-shadow: var(--shadow-neon); }
 
-        /* --- BREAKING NEWS POPUP --- */
-        .breaking-popup {
-            position: fixed; top: 20%; left: 50%; transform: translateX(-50%);
-            width: 90%; max-width: 400px;
-            background: rgba(10, 0, 5, 0.95);
-            border: 2px solid var(--alert);
-            border-radius: 12px; padding: 25px; text-align: center;
-            z-index: 300; box-shadow: var(--shadow-alert), 0 0 100px rgba(255,0,0,0.2);
-            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        /* --- PUSH NOTIFICATION --- */
+        .push-notification {
+            position: fixed; top: 20px; right: 20px;
+            width: 320px;
+            background: rgba(15, 2, 5, 0.95);
+            border-left: 4px solid var(--alert);
+            border-radius: 4px; padding: 15px;
+            z-index: 1000;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(255, 0, 60, 0.2);
+            backdrop-filter: blur(15px);
+            display: flex; gap: 12px;
+            border: 1px solid rgba(255, 0, 60, 0.1);
+            border-left: 4px solid var(--alert);
+            transform: translateX(120%);
+            transition: transform 0.3s var(--ease-tech);
         }
-        @keyframes shake { 10%, 90% { transform: translate3d(-51%, -1px, 0); } 20%, 80% { transform: translate3d(-49%, 2px, 0); } 30%, 50%, 70% { transform: translate3d(-52%, -4px, 0); } 40%, 60% { transform: translate3d(-48%, 4px, 0); } }
+        .push-notification.active { transform: translateX(0); }
 
         /* Glitch Effect */
         .glitch-text {
@@ -566,6 +572,13 @@
             <span class="material-symbols-outlined">tune</span>
         </button>
     </header>
+
+    <!-- GLOBAL TICKER -->
+    <div class="ticker-container" style="margin-bottom: 0; border-top: 1px solid rgba(138, 43, 226, 0.2);">
+        <div class="ticker-content" id="global-ticker">
+            <!-- Ticker items -->
+        </div>
+    </div>
 
     <!-- VIEW: DASHBOARD (Home) -->
     <section id="dashboard" class="view-section">
@@ -723,6 +736,7 @@
             </div>
 
             <div id="auth-form">
+                <div id="auth-status" style="font-family: var(--font-head); font-size: 0.7rem; text-align: center; margin-bottom: 15px; min-height: 1.2em; letter-spacing: 1px;"></div>
                 <div style="margin-bottom: 20px;">
                     <label style="color: var(--text-muted); font-size: 0.8rem; display:block; margin-bottom:8px;">ID IDENTIFIER</label>
                     <input type="text" id="auth-username" class="tech-input" placeholder="USER_ID..." style="padding-left:15px;">
@@ -731,7 +745,7 @@
                     <label style="color: var(--text-muted); font-size: 0.8rem; display:block; margin-bottom:8px;">ACCESS KEY</label>
                     <input type="password" id="auth-password" class="tech-input" placeholder="••••••••" style="padding-left:15px;">
                 </div>
-                <button class="btn-tech" onclick="handleAuthSubmit()">INITIALIZE SESSION</button>
+                <button class="btn-tech" id="auth-submit-btn" onclick="handleAuthSubmit()">INITIALIZE SESSION</button>
                 <div style="display:flex; justify-content:center; gap:20px; margin-top:15px;">
                     <button onclick="toggleAuthMode()" style="background:none; border:none; color:var(--primary); font-size:0.75rem; cursor:pointer; text-decoration:underline;" id="auth-toggle-btn">SWITCH TO REGISTRATION</button>
                 </div>
@@ -740,17 +754,17 @@
         </div>
     </div>
 
-    <!-- POPUP: BREAKING NEWS -->
-    <div id="breaking-popup" class="breaking-popup hidden">
-        <div style="display: flex; justify-content: center; margin-bottom: 10px;">
-            <span class="material-symbols-outlined glitch-text" style="font-size: 48px; color: var(--alert);">warning</span>
+    <!-- PUSH NOTIFICATION: BREAKING NEWS -->
+    <div id="push-notification" class="push-notification hidden">
+        <div style="color: var(--alert);"><span class="material-symbols-outlined glitch-text">warning</span></div>
+        <div style="flex: 1;">
+            <div style="font-family: var(--font-head); font-size: 0.65rem; color: var(--alert); letter-spacing: 2px; margin-bottom: 4px; font-weight: 700;">BREAKING NEWS</div>
+            <h4 id="push-title" style="margin: 0 0 8px 0; font-size: 0.9rem; line-height: 1.3;"></h4>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-tech" style="padding: 4px 12px; font-size: 0.65rem; width: auto; margin-top: 0;" onclick="loadDetail(currentBreakingId); closePush();">VIEW</button>
+                <button onclick="closePush()" style="background:none; border:none; color:var(--text-muted); font-size: 0.65rem; cursor:pointer; text-decoration: underline;">DISMISS</button>
+            </div>
         </div>
-        <h2 class="text-alert glitch-text" style="font-family: var(--font-head); margin: 0 0 10px 0;">SYSTEM ALERT</h2>
-        <h3 style="margin: 0 0 15px 0;">GLOBAL ENERGY SPIKE DETECTED</h3>
-        <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 20px;">Unprecedented surge in sector 4 grid. Immediate attention required.</p>
-        
-        <button class="btn-tech" style="background: transparent; border: 1px solid var(--alert); color: var(--alert);" onclick="closeBreaking()">DISMISS</button>
-        <button class="btn-tech" style="background: var(--alert); margin-top: 10px;" onclick="loadDetail(currentBreakingId); closeBreaking();">ACCESS REPORT</button>
     </div>
 
 </div> <!-- END APP -->
@@ -799,19 +813,49 @@
             submit.innerText = this.isRegistering ? "CREATE IDENTITY" : "INITIALIZE SESSION";
         },
         submit(user, pass) {
-            if (!user) return alert("ENTER ID");
-            const profile = {
-                username: user,
-                role: this.isRegistering ? "NEW ANALYST" : "ELITE ANALYST",
-                avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user}`,
-                history: [],
-                color: 270
-            };
-            localStorage.setItem('nexus_user', JSON.stringify(profile));
-            this.currentUser = profile;
-            this.updateUI();
-            toggleAuthModal();
-            navTo('profile');
+            const status = document.getElementById('auth-status');
+            const btn = document.getElementById('auth-submit-btn');
+
+            if (!user) {
+                status.innerText = "!! ERROR: MISSING_ID !!";
+                status.style.color = "var(--alert)";
+                gsap.from(status, { x: 5, duration: 0.05, repeat: 5, yoyo: true });
+                return;
+            }
+
+            btn.disabled = true;
+            status.style.color = "var(--success)";
+            status.innerText = ">> SYNCING_IDENTITY...";
+
+            // Artificial delay for "snappy" but techy feel
+            setTimeout(() => {
+                const profile = {
+                    username: user,
+                    role: this.isRegistering ? "NEW ANALYST" : "ELITE ANALYST",
+                    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user}`,
+                    history: [],
+                    color: 270
+                };
+                localStorage.setItem('nexus_user', JSON.stringify(profile));
+                this.currentUser = profile;
+                this.updateUI();
+
+                status.innerText = ">> IDENTITY_VERIFIED";
+
+                setTimeout(() => {
+                    btn.disabled = false;
+                    status.innerText = "";
+                    toggleAuthModal();
+                    navTo('profile');
+
+                    // Trigger Welcome Notification
+                    triggerBreakingNews({
+                        id: -1,
+                        title: `WELCOME, ${user.toUpperCase()}`,
+                        content: "Neural link established. Accessing personalized grid data..."
+                    });
+                }, 800);
+            }, 1200);
         },
         logout() {
             localStorage.removeItem('nexus_user');
@@ -876,13 +920,14 @@
         const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
         const cachedData = localStorage.getItem(CACHE_KEY);
 
+        // Respect 30min sync interval
         if (cachedTime && cachedData && (now - cachedTime < REFRESH_INTERVAL)) {
-            console.log("Using cached news data");
-            processNewsData(JSON.parse(cachedData));
+            console.log("Accessing local data vault...");
+            processNewsData(JSON.parse(cachedData), true);
             return;
         }
 
-        console.log("Fetching fresh news...");
+        console.log("Syncing with Global News Grid...");
         try {
             const response = await fetch(API_URL);
             const data = await response.json();
@@ -890,22 +935,19 @@
             localStorage.setItem(CACHE_KEY, JSON.stringify(data));
             localStorage.setItem(CACHE_TIME_KEY, now.toString());
 
-            processNewsData(data);
+            processNewsData(data, false);
         } catch (error) {
-            console.error("Failed to fetch news:", error);
+            console.error("Link Failure. Reverting to local cache...", error);
             if (cachedData) {
-                processNewsData(JSON.parse(cachedData));
+                processNewsData(JSON.parse(cachedData), true);
             } else {
-                console.log("Using Fallback Data...");
-                processNewsData(FALLBACK_DATA);
+                processNewsData(FALLBACK_DATA, true);
             }
         }
     }
 
-    function processNewsData(data) {
+    function processNewsData(data, isCached = false) {
         let flattenedNews = [];
-        let id = 0;
-
         const categoryMap = {
             'World': 'GLOBAL',
             'Business': 'FINANCE',
@@ -916,39 +958,74 @@
             'Sports': 'ARENA'
         };
 
+        // Aggregate across all sectors to find the top reports
         for (const [cat, items] of Object.entries(data)) {
             items.forEach(item => {
                 flattenedNews.push({
-                    id: id++,
                     title: item.title,
                     region: item.source,
-                    date: new Date().toLocaleDateString(), // API doesn't provide date, use current
+                    date: new Date().toLocaleDateString(),
                     cat: categoryMap[cat] || cat.toUpperCase(),
                     img: item.og || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
-                    content: `Source: ${item.source}. Full report available via encrypted link. Accessing data stream from ${cat} sector...`,
+                    content: `Data harvested from ${item.source}. Critical report on ${cat} developments. Accessing full neural link...`,
                     link: item.link
                 });
             });
         }
 
-        // Sort by ID (arbitrary) or shuffle for variety
-        db.news = flattenedNews.slice(0, 50);
+        // Ensure exactly Top 20 as requested
+        const top20 = flattenedNews.slice(0, 20).map((n, i) => ({...n, id: i}));
 
-        // Generate Timeline from news
+        // Check for updates to trigger breaking news (only on fresh fetches)
+        const lastHeadline = localStorage.getItem('nexus_last_headline');
+        if (top20.length > 0 && top20[0].title !== lastHeadline) {
+            if (lastHeadline && !isCached) triggerBreakingNews(top20[0]);
+            localStorage.setItem('nexus_last_headline', top20[0].title);
+        }
+
+        db.news = top20;
+
+        // Generate Chronology
         db.timeline = db.news.slice(0, 10).map((n, index) => ({
             time: `${12 - index}:00`,
             title: n.title,
-            desc: `Data packet received from ${n.region}. Source verified.`
+            desc: `Signal verified from ${n.region}. Data integrity: 99.8%`
         }));
 
         renderNews();
         renderTimeline();
 
-        // Update last sync time
+        // Populate Tickers
+        const tickers = ['global-ticker', 'live-ticker'];
+        tickers.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.innerHTML = db.news.map(n => `<span class="ticker-item">${n.cat} // ${n.title}</span>`).join('');
+            }
+        });
+
         const syncEl = document.getElementById('last-sync');
         if (syncEl) {
-            syncEl.innerText = "| LAST UPDATE: " + new Date().toLocaleTimeString();
+            syncEl.innerText = "| LAST SYNC: " + new Date().toLocaleTimeString();
         }
+    }
+
+    function triggerBreakingNews(item) {
+        currentBreakingId = item.id;
+        const push = document.getElementById('push-notification');
+        if (!push) return;
+
+        document.getElementById('push-title').innerText = item.title;
+        push.classList.remove('hidden');
+
+        requestAnimationFrame(() => {
+            push.classList.add('active');
+            // Auto-hide after 10 seconds
+            setTimeout(closePush, 10000);
+        });
+
+        // Snappy GSAP pop
+        gsap.fromTo(push, { x: "120%" }, { x: "0%", duration: 0.3, ease: "power4.out" });
     }
 
     /* --- CORE FUNCTIONS --- */
@@ -964,8 +1041,8 @@
         if (currentView) {
             gsap.to(currentView, {
                 opacity: 0,
-                y: -10,
-                duration: 0.2,
+                y: -5,
+                duration: 0.15,
                 ease: "power2.in",
                 onComplete: () => {
                     currentView.classList.add('hidden');
@@ -979,7 +1056,7 @@
         function showTarget() {
             targetView.classList.remove('hidden');
             gsap.fromTo(targetView,
-                { opacity: 0, y: 10, scale: 0.98 },
+                { opacity: 0, y: 5, scale: 0.99 },
                 { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power2.out" }
             );
         }
@@ -1056,11 +1133,11 @@
         container.innerHTML = html;
         if (archive) archive.innerHTML = html;
 
-        // Animate entrance
+        // Animate entrance (Snappy Stagger)
         gsap.from(".news-card", {
-            y: 30,
+            y: 20,
             opacity: 0,
-            duration: 0.4,
+            duration: 0.3,
             stagger: 0.05,
             ease: "power2.out"
         });
@@ -1140,9 +1217,11 @@
         modal.classList.toggle('hidden');
     }
 
-    // Breaking News Logic
-    function closeBreaking() {
-        document.getElementById('breaking-popup').classList.add('hidden');
+    // Breaking News Push Logic
+    function closePush() {
+        const push = document.getElementById('push-notification');
+        push.classList.remove('active');
+        setTimeout(() => push.classList.add('hidden'), 300);
     }
 
     function renderProfile() {
@@ -1405,18 +1484,12 @@
             fetchNews();
         }, 60000); // Check every minute, fetchNews handles the 30min logic
         
-        // Trigger Breaking News after 8s
+        // Trigger Initial "Welcome" Breaking News after 5s
         setTimeout(() => {
             if (db.news.length > 0) {
-                const breaking = db.news[Math.floor(Math.random() * db.news.length)];
-                currentBreakingId = breaking.id;
-                const popup = document.getElementById('breaking-popup');
-                popup.querySelector('h3').innerText = breaking.title;
-                popup.querySelector('p').innerText = breaking.content;
-                popup.classList.remove('hidden');
-                gsap.from(popup, { scale: 0.8, opacity: 0, duration: 0.5, ease: "back.out(1.7)" });
+                triggerBreakingNews(db.news[0]);
             }
-        }, 8000);
+        }, 5000);
     });
 
 </script>
