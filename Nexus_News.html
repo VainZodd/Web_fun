@@ -13,6 +13,8 @@
 
     <!-- GSAP for High-End Animations -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- YouTube IFrame API -->
+    <script src="https://www.youtube.com/iframe_api"></script>
 
     <style>
         /* --- CORE VARIABLES & THEME --- */
@@ -110,7 +112,7 @@
             background-size: cover;
             opacity: 0;
             pointer-events: none !important;
-            z-index: 20;
+            z-index: 11;
             mix-blend-mode: screen;
         }
 
@@ -357,6 +359,10 @@
         #video-container {
             z-index: 1;
             pointer-events: auto;
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: #000;
         }
         .player-controls {
             display: flex; gap: 8px; margin-bottom: 20px;
@@ -722,18 +728,21 @@
         </div>
 
         <div class="video-player-frame">
-            <div class="scanline-effect" style="z-index: 5;"></div>
-            <div id="static-noise" class="static-overlay" style="z-index: 6;"></div>
+            <div class="scanline-effect" style="z-index: 10;"></div>
+            <div id="static-noise" class="static-overlay" style="z-index: 11;"></div>
 
-            <div id="video-container" style="width: 100%; height: 100%; pointer-events: auto;">
-                <iframe id="live-video"
-                        style="width: 100%; height: 100%; border: none; pointer-events: auto; opacity: 0.8;"
-                        src=""
-                        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
-                        allowfullscreen></iframe>
+            <div id="video-container" style="z-index: 1;">
+                <div id="live-video-placeholder"></div>
             </div>
 
-            <div class="live-indicator" style="z-index: 10;"><div class="live-dot"></div> LIVE FEED</div>
+            <div id="signal-loss-hud" class="hidden flex-center" style="position: absolute; inset: 0; z-index: 12; background: rgba(20, 0, 0, 0.6); flex-direction: column; text-align: center;">
+                <span class="material-symbols-outlined" style="font-size: 48px; color: var(--alert); margin-bottom: 15px;">signal_disconnected</span>
+                <div style="font-family: var(--font-head); color: var(--alert); letter-spacing: 2px;">UPLINK_BLOCKED</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 10px;">ENCRYPTION PROTOCOL MISMATCH [ERR_150]</div>
+                <button class="btn-tech" style="width: auto; margin-top: 20px; padding: 8px 20px;" onclick="openExternalStream()">MANUAL_OVERRIDE</button>
+            </div>
+
+            <div class="live-indicator" style="z-index: 15;"><div class="live-dot"></div> LIVE FEED</div>
             
             <!-- Technical Overlay -->
             <div style="position: absolute; top: 15px; right: 15px; text-align: right; font-family: var(--font-head); font-size: 0.55rem; color: var(--primary); pointer-events: none;">
@@ -921,15 +930,27 @@
 
 <script>
     /* --- CORE UI UTILS --- */
+    function escapeHTML(str) {
+        if (!str) return "";
+        return str.replace(/[&<>"']/g, m => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+        })[m]);
+    }
+
     function typeWriter(el, text, speed = 30) {
         if (!el) return;
-        el.innerHTML = '';
+        // Cancel any existing typewriter animation on this element
+        if (el._typeTimeout) clearTimeout(el._typeTimeout);
+
+        el.textContent = '';
         let i = 0;
         function type() {
             if (i < text.length) {
-                el.innerHTML += text.charAt(i);
+                el.textContent += text.charAt(i);
                 i++;
-                setTimeout(type, speed);
+                el._typeTimeout = setTimeout(type, speed);
+            } else {
+                delete el._typeTimeout;
             }
         }
         type();
@@ -1160,7 +1181,7 @@
         tickers.forEach(id => {
             const el = document.getElementById(id);
             if (el) {
-                el.innerHTML = db.news.map(n => `<span class="ticker-item">${n.cat} // ${n.title}</span>`).join('');
+                el.innerHTML = db.news.map(n => `<span class="ticker-item">${escapeHTML(n.cat)} // ${escapeHTML(n.title)}</span>`).join('');
             }
         });
 
@@ -1239,11 +1260,11 @@
             <div class="glass-panel news-card" onclick="loadDetail(${item.id})">
                 <img src="${item.img}" class="news-thumb" onerror="this.src='https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80'">
                 <div class="card-body">
-                    <span class="card-cat">${item.cat} // SEC-${item.sector_id}</span>
-                    <h4 class="card-title">${item.title}</h4>
+                    <span class="card-cat">${escapeHTML(item.cat)} // SEC-${escapeHTML(item.sector_id)}</span>
+                    <h4 class="card-title">${escapeHTML(item.title)}</h4>
                     <div class="card-meta">
-                        <span>${item.region} // SIG:${item.signature}</span>
-                        <span>${item.date}</span>
+                        <span>${escapeHTML(item.region)} // SIG:${escapeHTML(item.signature)}</span>
+                        <span>${escapeHTML(item.date)}</span>
                     </div>
                 </div>
             </div>`).join('');
@@ -1421,11 +1442,11 @@
                 <div class="glass-panel news-card" onclick="loadDetail(${item.id})">
                     <img src="${item.img}" class="news-thumb" onerror="this.src='https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80'">
                     <div class="card-body">
-                        <span class="card-cat">${item.cat} // SEC-${item.sector_id}</span>
-                        <h4 class="card-title">${item.title}</h4>
+                        <span class="card-cat">${escapeHTML(item.cat)} // SEC-${escapeHTML(item.sector_id)}</span>
+                        <h4 class="card-title">${escapeHTML(item.title)}</h4>
                         <div class="card-meta">
-                            <span>${item.region} // SIG:${item.signature}</span>
-                            <span>${item.date}</span>
+                            <span>${escapeHTML(item.region)} // SIG:${escapeHTML(item.signature)}</span>
+                            <span>${escapeHTML(item.date)}</span>
                         </div>
                     </div>
                 </div>`;
@@ -1519,9 +1540,9 @@
             container.innerHTML += `
             <div class="glass-panel timeline-node" style="padding: 15px; border-radius: 8px;">
                 <div class="node-dot"></div>
-                <div class="time-label">${item.time}</div>
-                <h4 style="margin: 0 0 5px 0;">${item.title}</h4>
-                <p style="margin:0; font-size: 0.85rem; color: #aaa;">${item.desc}</p>
+                <div class="time-label">${escapeHTML(item.time)}</div>
+                <h4 style="margin: 0 0 5px 0;">${escapeHTML(item.title)}</h4>
+                <p style="margin:0; font-size: 0.85rem; color: #aaa;">${escapeHTML(item.desc)}</p>
             </div>`;
         });
     }
@@ -1712,16 +1733,73 @@
 
     // Live News Streams (YouTube Channel IDs)
     let liveIntervals = [];
+    let ytPlayer = null;
+    let isPlayerReady = false;
+
     const STREAMS = [
-        { id: 0, name: "SKY NEWS (UK)", status: "STABLE", cid: "UC0p5jTq6VN_Ozjjlp0vH9qA", signal: 5, thumb: "https://images.unsplash.com/photo-1585829365234-781f75d9c2ca?auto=format&fit=crop&w=200&q=80" },
-        { id: 1, name: "AL JAZEERA", status: "STABLE", cid: "UCNye-wNBqNL5ZzHSJj3l8Bg", signal: 4, thumb: "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=200&q=80" },
-        { id: 2, name: "DW NEWS (ENG)", status: "STABLE", cid: "UCknLrEdhRCp1aegoPtTNnxA", signal: 4, thumb: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=200&q=80" },
-        { id: 3, name: "ABC NEWS (US)", status: "WARNING", cid: "UCBi2erQHkG74fkW3XWuQDnQ", signal: 3, thumb: "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=200&q=80" },
-        { id: 4, name: "FRANCE 24", status: "STABLE", cid: "UC8AM7A11YcI0_V88L6_fS-g", signal: 5, thumb: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=200&q=80" },
-        { id: 5, name: "BLOOMBERG", status: "STABLE", cid: "UCIALMKvObAkpaFVohLYqdfw", signal: 5, thumb: "https://images.unsplash.com/photo-1611974717483-363e1730da46?auto=format&fit=crop&w=200&q=80" }
+        { id: 0, name: "BLOOMBERG TECH", status: "STABLE", cid: "UCIALMKvObAkpaFVohLYqdfw", signal: 5, thumb: "https://images.unsplash.com/photo-1611974717483-363e1730da46?auto=format&fit=crop&w=200&q=80" },
+        { id: 1, name: "SKY NEWS (UK)", status: "STABLE", cid: "UC0p5jTq6VN_Ozjjlp0vH9qA", signal: 5, thumb: "https://images.unsplash.com/photo-1585829365234-781f75d9c2ca?auto=format&fit=crop&w=200&q=80" },
+        { id: 2, name: "AL JAZEERA", status: "STABLE", cid: "UCNye-wNBqNL5ZzHSJj3l8Bg", signal: 4, thumb: "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=200&q=80" },
+        { id: 3, name: "FRANCE 24", status: "STABLE", cid: "UC8AM7A11YcI0_V88L6_fS-g", signal: 5, thumb: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=200&q=80" },
+        { id: 4, name: "DW NEWS (ENG)", status: "STABLE", cid: "UCknLrEdhRCp1aegoPtTNnxA", signal: 4, thumb: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=200&q=80" },
+        { id: 5, name: "ABC NEWS (US)", status: "WARNING", cid: "UCBi2erQHkG74fkW3XWuQDnQ", signal: 3, thumb: "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=200&q=80" }
     ];
 
     let activeStreamId = 0;
+
+    // YouTube API Callback
+    function onYouTubeIframeAPIReady() {
+        ytPlayer = new YT.Player('live-video-placeholder', {
+            height: '100%',
+            width: '100%',
+            playerVars: {
+                'autoplay': 1,
+                'mute': 1,
+                'controls': 0,
+                'modestbranding': 1,
+                'rel': 0,
+                'iv_load_policy': 3,
+                'playsinline': 1,
+                'enablejsapi': 1,
+                'origin': window.location.origin
+            },
+            events: {
+                'onReady': (event) => {
+                    isPlayerReady = true;
+                    // Initial stream load
+                    switchStream(activeStreamId, true);
+                },
+                'onError': (e) => {
+                    console.error("YT_PLAYER_ERROR:", e.data);
+                    const label = document.getElementById('stream-status-label');
+                    if (label) {
+                        label.innerText = "LINK FAILURE // ERR_" + e.data;
+                        label.style.color = "var(--alert)";
+                    }
+                    if (e.data === 150 || e.data === 101 || e.data === 5) {
+                        document.getElementById('signal-loss-hud').classList.remove('hidden');
+                    }
+                    // Trigger glitch on error
+                    gsap.to('#static-noise', { opacity: 0.6, duration: 0.5, repeat: 3, yoyo: true });
+                },
+                'onStateChange': (e) => {
+                    const label = document.getElementById('stream-status-label');
+                    if (!label) return;
+
+                    if (e.data === YT.PlayerState.BUFFERING) {
+                        label.innerText = "BUFFERING...";
+                        label.style.color = "var(--primary)";
+                    } else if (e.data === YT.PlayerState.PLAYING) {
+                        label.innerText = "SIGNAL STABLE";
+                        label.style.color = "var(--success)";
+                        gsap.to('#static-noise', { opacity: 0, duration: 0.2 });
+                    } else if (e.data === YT.PlayerState.UNSTARTED) {
+                        label.innerText = "CONNECTING...";
+                    }
+                }
+            }
+        });
+    }
 
     function initLive() {
         // Clear previous intervals if any
@@ -1730,15 +1808,14 @@
 
         renderStreamSelector();
 
-        // Auto-load first stream if none active
-        if (document.getElementById('live-video').src === "" || document.getElementById('live-video').src.includes('Nexus_News.html')) {
-            switchStream(activeStreamId);
+        if (isPlayerReady) {
+            switchStream(activeStreamId, true);
         }
 
         // Ticker
         const ticker = document.getElementById('live-ticker');
         if (ticker) {
-            ticker.innerHTML = db.news.map(n => `<span class="ticker-item">${n.title} [//] ${n.region}</span>`).join('');
+            ticker.innerHTML = db.news.map(n => `<span class="ticker-item">${escapeHTML(n.title)} [//] ${escapeHTML(n.region)}</span>`).join('');
         }
 
         // Viewers
@@ -1817,66 +1894,88 @@
         `).join('');
     }
 
-    function switchStream(id) {
-        // Prevent redundant switching but allow if current src is empty
-        if (id === activeStreamId && document.getElementById('live-video').src !== "") return;
+    function openExternalStream() {
+        const stream = STREAMS.find(s => s.id === activeStreamId);
+        if (stream) {
+            window.open(`https://www.youtube.com/channel/${stream.cid}/live`, '_blank');
+        }
+    }
+
+    function switchStream(id, force = false) {
+        if (id === activeStreamId && !force) return;
+
+        activeStreamId = id;
+        const stream = STREAMS.find(s => s.id === id);
+        if (!stream) return;
+
+        renderStreamSelector();
+        document.getElementById('signal-loss-hud').classList.add('hidden');
 
         const noise = document.getElementById('static-noise');
-        const video = document.getElementById('live-video');
+        const videoWrap = document.getElementById('video-container');
+
+        // Technical HUD Update
+        const statusEl = document.getElementById('stream-status-label');
+        if (statusEl) {
+            statusEl.innerText = "SYNCING_LINK...";
+            statusEl.style.color = "var(--primary)";
+        }
 
         // 1. Start Transition Effect
         const tl = gsap.timeline();
-        tl.to(noise, { opacity: 0.8, duration: 0.15 })
-          .to(video, { filter: "contrast(3) brightness(2) blur(10px)", opacity: 0.3, duration: 0.1 }, 0)
+        tl.to(noise, { opacity: 0.8, duration: 0.1, ease: "power4.in" })
+          .to(videoWrap, { filter: "contrast(3) brightness(2) blur(10px)", opacity: 0.3, duration: 0.1 }, 0)
           .add(() => {
-              // 2. Perform Switch Mid-Noise
-              activeStreamId = id;
-              const stream = STREAMS.find(s => s.id === id);
-              if (!stream) return;
+              // 2. Perform Switch
+              // Try to bypass some embed restrictions by using a different URL format or omitting some params if needed
+              // However, the channel/live_stream is the most reliable for 'latest live'
+              const embedUrl = `https://www.youtube.com/embed/live_stream?channel=${stream.cid}&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&enablejsapi=1&widgetid=1&origin=${encodeURIComponent(window.location.origin)}`;
 
-              renderStreamSelector();
-
-              if (video) {
-                  // YouTube Live Stream Embed format by Channel ID
-                  video.src = `https://www.youtube.com/embed/live_stream?channel=${stream.cid}&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1`;
+              const iframe = document.querySelector('#video-container iframe');
+              if (iframe) {
+                  iframe.src = embedUrl;
               }
 
               const nameEl = document.getElementById('stream-name');
-              const statusEl = document.getElementById('stream-status-label');
               const signalEl = document.getElementById('stream-signal');
 
               if (nameEl) nameEl.innerText = stream.name;
 
               // Random Technical Data
               document.getElementById('link-bitrate').innerText = `BITRATE: ${(Math.random() * 50 + 10).toFixed(1)} Mbps`;
-              document.getElementById('stream-encryption').innerText = ["AES", "RSA", "P2P", "SSL"][Math.floor(Math.random() * 4)];
+              document.getElementById('link-protocol').innerText = `PROTO: NX-${['SECURED', 'ENCRYPTED', 'GRID', 'NEURAL'][Math.floor(Math.random() * 4)]}`;
+              document.getElementById('stream-encryption').innerText = ["AES-256", "RSA-4096", "QUBIT", "SHR-ECC"][Math.floor(Math.random() * 4)];
 
               // Signal mapping
-              const signalPercent = stream.signal * 20;
+              const signalPercent = stream.signal * 20 + Math.floor(Math.random() * 10);
               if (signalEl) {
                   signalEl.innerText = signalPercent + "%";
                   signalEl.style.color = stream.signal < 2 ? 'var(--alert)' : (stream.signal < 4 ? 'var(--primary)' : 'var(--success)');
               }
-              if (statusEl) {
-                  statusEl.innerText = "SIGNAL " + (stream.signal === 0 ? "LOST" : (stream.signal < 3 ? "UNSTABLE" : "STABLE"));
-                  statusEl.style.color = stream.signal < 3 ? 'var(--alert)' : 'var(--success)';
-              }
           })
-          // 3. End Transition
-          .to(noise, { opacity: 0, duration: 0.2, delay: 0.1 })
-          .to(video, { filter: "contrast(1) brightness(1) blur(0px)", opacity: 0.8, duration: 0.3 }, "-=0.2");
+          // 3. End Transition (Wait for load slightly)
+          .to(noise, { opacity: 0, duration: 0.15, delay: 0.3, ease: "power4.out" })
+          .to(videoWrap, { filter: "contrast(1) brightness(1) blur(0px)", opacity: 1, duration: 0.2 }, "-=0.15")
+          .add(() => {
+              if (statusEl && stream.signal >= 3) {
+                  statusEl.innerText = "SIGNAL STABLE";
+                  statusEl.style.color = "var(--success)";
+              }
+          });
     }
 
     function toggleMute(btn) {
-        const video = document.getElementById('live-video');
-        const isMuted = video.src.includes('mute=1');
+        if (!ytPlayer || !isPlayerReady) return;
 
+        const isMuted = ytPlayer.isMuted();
         btn.classList.toggle('active');
+
         if (isMuted) {
-            video.src = video.src.replace('mute=1', 'mute=0');
+            ytPlayer.unMute();
             btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;">volume_up</span> AUDIO';
+            gsap.from(btn, { scale: 1.2, duration: 0.2 });
         } else {
-            video.src = video.src.replace('mute=0', 'mute=1');
+            ytPlayer.mute();
             btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;">volume_off</span> MUTED';
         }
     }
@@ -1889,9 +1988,10 @@
     }
 
     function toggleZoom(btn) {
-        const video = document.getElementById('live-video');
+        const iframe = document.querySelector('#video-container iframe');
+        if (!iframe) return;
         btn.classList.toggle('active');
-        gsap.to(video, { scale: btn.classList.contains('active') ? 1.5 : 1, duration: 0.4, ease: "power2.inOut" });
+        gsap.to(iframe, { scale: btn.classList.contains('active') ? 1.4 : 1, duration: 0.2, ease: "power4.out" });
     }
 
     function addChat(u, m, isBot = false) {
@@ -1903,7 +2003,7 @@
             div.style.borderLeft = "2px solid var(--accent)";
             div.style.background = "rgba(0, 240, 255, 0.05)";
         }
-        div.innerHTML = `<span class="chat-user" style="color:${isBot ? 'var(--success)' : 'var(--highlight)'}">${u}:</span> ${m}`;
+        div.innerHTML = `<span class="chat-user" style="color:${isBot ? 'var(--success)' : 'var(--highlight)'}">${escapeHTML(u)}:</span> ${escapeHTML(m)}`;
         chatContainer.appendChild(div);
 
         // Snappy GSAP Entrance
