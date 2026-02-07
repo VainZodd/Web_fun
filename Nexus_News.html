@@ -104,6 +104,16 @@
             z-index: 10;
         }
 
+        .static-overlay {
+            position: absolute; inset: 0;
+            background: url('https://media.giphy.com/media/oEI9uWUqWMrBK/giphy.gif');
+            background-size: cover;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 20;
+            mix-blend-mode: screen;
+        }
+
         /* --- APP CONTAINER --- */
         #app {
             max-width: 1200px;
@@ -342,8 +352,19 @@
             position: relative;
             overflow: hidden;
             box-shadow: 0 0 30px rgba(0,0,0,0.8);
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
+        .player-controls {
+            display: flex; gap: 8px; margin-bottom: 20px;
+        }
+        .ctrl-btn {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-muted); font-family: var(--font-head); font-size: 0.6rem;
+            padding: 5px 12px; cursor: pointer; transition: 0.3s; letter-spacing: 1px;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .ctrl-btn:hover { background: var(--primary); color: white; border-color: var(--accent); }
+        .ctrl-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(138,43,226,0.2); }
         .live-indicator {
             position: absolute; top: 15px; left: 15px;
             background: rgba(255, 0, 60, 0.8);
@@ -354,6 +375,35 @@
         }
         .live-dot { width: 8px; height: 8px; background: white; border-radius: 50%; animation: blink 1s infinite; }
         @keyframes blink { 50% { opacity: 0; } }
+
+        /* Uplink Grid UI */
+        .uplink-card {
+            position: relative;
+            cursor: pointer;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(138, 43, 226, 0.3);
+            transition: 0.3s;
+            background: #000;
+        }
+        .uplink-card:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(138, 43, 226, 0.3); }
+        .uplink-card.active { border-color: var(--accent); box-shadow: 0 0 15px var(--accent); }
+
+        .uplink-thumb { width: 100%; height: 80px; object-fit: cover; opacity: 0.6; transition: 0.3s; }
+        .uplink-card:hover .uplink-thumb { opacity: 1; }
+
+        .uplink-badge {
+            position: absolute; top: 8px; left: 8px;
+            background: var(--alert); color: white;
+            font-size: 0.55rem; font-weight: 900; padding: 2px 5px;
+            border-radius: 2px; display: flex; align-items: center; gap: 3px;
+        }
+        .signal-bars {
+            position: absolute; bottom: 35px; right: 8px;
+            display: flex; gap: 2px; align-items: flex-end;
+        }
+        .bar { width: 3px; background: var(--success); opacity: 0.3; }
+        .bar.active { opacity: 1; }
         
         .multiview-btn {
             position: absolute; bottom: 15px; right: 15px;
@@ -556,6 +606,17 @@
 </head>
 <body>
 
+<!-- BOOT LOADER -->
+<div id="boot-loader" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--font-head); pointer-events: none;">
+    <div id="boot-text" style="color:var(--primary); font-size:0.8rem; text-align:center; letter-spacing: 2px;">
+        INITIALIZING NEURAL LINK...<br>
+        <span style="color:var(--text-muted); font-size: 0.6rem;">ENCRYPTING TERMINAL...</span>
+    </div>
+    <div style="width:200px; height:2px; background:#111; margin-top:20px; position:relative; overflow:hidden;">
+        <div id="boot-bar" style="position:absolute; inset:0; background:var(--primary); width:0%;"></div>
+    </div>
+</div>
+
 <!-- APP ROOT -->
 <div id="app">
 
@@ -647,16 +708,31 @@
 
         <div class="video-player-frame">
             <div class="scanline-effect"></div>
+            <div id="static-noise" class="static-overlay"></div>
             <video id="live-video" loop muted autoplay style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;">
                 <source src="https://assets.mixkit.co/videos/preview/mixkit-futuristic-holographic-interface-902-large.mp4" type="video/mp4">
             </video>
             <div class="live-indicator"><div class="live-dot"></div> LIVE FEED</div>
             
+            <!-- Technical Overlay -->
+            <div style="position: absolute; top: 15px; right: 15px; text-align: right; font-family: var(--font-head); font-size: 0.55rem; color: var(--primary); pointer-events: none;">
+                <div id="link-resolution">RES: 2160p // HDR</div>
+                <div id="link-bitrate">BITRATE: 45.2 Mbps</div>
+                <div id="link-protocol">PROTO: NX-SECURED</div>
+            </div>
+
             <!-- Fake UI Overlay -->
             <div style="position: absolute; bottom: 15px; left: 15px;">
                 <h4 id="stream-name" style="margin: 0; font-family: var(--font-head);">SECTOR 7 CAM A</h4>
                 <span id="stream-status-label" style="font-size: 0.7rem; color: var(--success);">SIGNAL STABLE</span>
             </div>
+        </div>
+
+        <div class="player-controls">
+            <button class="ctrl-btn" onclick="toggleMute(this)"><span class="material-symbols-outlined" style="font-size:14px;">volume_off</span> MUTE</button>
+            <button class="ctrl-btn" onclick="toggleRec(this)"><span class="material-symbols-outlined" style="font-size:14px;">fiber_manual_record</span> REC</button>
+            <button class="ctrl-btn" onclick="toggleZoom(this)"><span class="material-symbols-outlined" style="font-size:14px;">zoom_in</span> ZOOM</button>
+            <button class="ctrl-btn" onclick="initInteractions()"><span class="material-symbols-outlined" style="font-size:14px;">refresh</span> SYNC</button>
         </div>
 
         <div style="display: flex; gap: 10px; margin-bottom: 25px;">
@@ -667,6 +743,10 @@
             <div class="glass-panel" style="flex:1; padding: 10px; text-align: center; border-radius: 8px;">
                 <div id="stream-signal" style="font-family: var(--font-head); color: var(--success); font-size: 1.2rem;">98%</div>
                 <div style="font-size: 0.7rem; color: var(--text-muted);">SIGNAL</div>
+            </div>
+            <div class="glass-panel" style="flex:1; padding: 10px; text-align: center; border-radius: 8px;">
+                <div id="stream-encryption" style="font-family: var(--font-head); color: var(--primary); font-size: 1.2rem;">AES</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">CRYPT</div>
             </div>
         </div>
 
@@ -696,13 +776,25 @@
     <!-- VIEW: ARCHIVE -->
     <section id="archive" class="view-section hidden">
         <h2 style="font-family: var(--font-head); margin-bottom: 20px;">NEURAL ARCHIVE</h2>
+
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <div class="glass-panel" style="flex:1; padding: 10px; border-radius: 8px; border-left: 2px solid var(--primary);">
+                <div style="font-size: 0.6rem; color: var(--text-muted);">TOTAL ENTRIES</div>
+                <div style="font-family: var(--font-head); color: var(--text-main);" id="archive-total">0</div>
+            </div>
+            <div class="glass-panel" style="flex:1; padding: 10px; border-radius: 8px; border-left: 2px solid var(--success);">
+                <div style="font-size: 0.6rem; color: var(--text-muted);">INDEX STATUS</div>
+                <div style="font-family: var(--font-head); color: var(--success);">OPTIMIZED</div>
+            </div>
+        </div>
+
         <div class="search-container">
             <span class="material-symbols-outlined search-icon">search</span>
             <input type="text" class="tech-input" placeholder="QUERY DATABASE...">
         </div>
         
         <div class="news-grid" id="archive-feed">
-            <!-- Copied feed items for demo -->
+            <!-- News items -->
         </div>
     </section>
 
@@ -1131,7 +1223,11 @@
         }
         
         container.innerHTML = html;
-        if (archive) archive.innerHTML = html;
+        if (archive) {
+            archive.innerHTML = html;
+            const totalEl = document.getElementById('archive-total');
+            if (totalEl) totalEl.innerText = db.news.length;
+        }
 
         // Animate entrance (Snappy Stagger)
         gsap.from(".news-card", {
@@ -1321,26 +1417,22 @@
     // Live Simulations
     let liveIntervals = [];
     const STREAMS = [
-        { id: 0, name: "SECTOR 7 CAM A", status: "STABLE", url: "https://assets.mixkit.co/videos/preview/mixkit-futuristic-holographic-interface-902-large.mp4", signal: "98%", thumb: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=200&q=80" },
-        { id: 1, name: "LUNAR OUTPOST 4", status: "STABLE", url: "https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-a-world-map-with-lines-and-dots-24515-large.mp4", signal: "84%", thumb: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=200&q=80" },
-        { id: 2, name: "ORBITAL HUB 12", status: "WARNING", url: "https://assets.mixkit.co/videos/preview/mixkit-abstract-technology-screen-with-numbers-and-data-24758-large.mp4", signal: "62%", thumb: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=200&q=80" }
+        { id: 0, name: "SECTOR 7 CAM A", status: "STABLE", url: "https://assets.mixkit.co/videos/preview/mixkit-futuristic-holographic-interface-902-large.mp4", signal: 5, thumb: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=200&q=80" },
+        { id: 1, name: "LUNAR OUTPOST 4", status: "STABLE", url: "https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-a-world-map-with-lines-and-dots-24515-large.mp4", signal: 4, thumb: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=200&q=80" },
+        { id: 2, name: "ORBITAL HUB 12", status: "WARNING", url: "https://assets.mixkit.co/videos/preview/mixkit-abstract-technology-screen-with-numbers-and-data-24758-large.mp4", signal: 2, thumb: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=200&q=80" },
+        { id: 3, name: "DEEP SEA CORE", status: "STABLE", url: "https://assets.mixkit.co/videos/preview/mixkit-waves-in-the-water-1565-large.mp4", signal: 3, thumb: "https://images.unsplash.com/photo-1551244072-5d12893278ab?auto=format&fit=crop&w=200&q=80" },
+        { id: 4, name: "MARS COLONY A1", status: "LOST", url: "https://assets.mixkit.co/videos/preview/mixkit-dust-and-light-particles-in-the-air-2345-large.mp4", signal: 0, thumb: "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=200&q=80" },
+        { id: 5, name: "BIO-LAB DELTA", status: "STABLE", url: "https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-green-plant-leaf-2384-large.mp4", signal: 5, thumb: "https://images.unsplash.com/photo-1530836361253-efad5cb2f6de?auto=format&fit=crop&w=200&q=80" }
     ];
+
+    let activeStreamId = 0;
 
     function initLive() {
         // Clear previous intervals if any
         liveIntervals.forEach(clearInterval);
         liveIntervals = [];
 
-        // Stream Selector
-        const selector = document.getElementById('stream-selector');
-        if (selector) {
-            selector.innerHTML = STREAMS.map(s => `
-                <div class="glass-panel" onclick="switchStream(${s.id})" style="cursor:pointer; border-radius:8px; overflow:hidden; position:relative; border: 1px solid ${s.status === 'WARNING' ? 'var(--alert)' : 'var(--primary)'}">
-                    <img src="${s.thumb}" style="width:100%; height:60px; object-fit:cover; opacity:0.5;">
-                    <div style="font-size:0.6rem; padding:4px; text-align:center; background:rgba(0,0,0,0.6);">${s.name}</div>
-                </div>
-            `).join('');
-        }
+        renderStreamSelector();
 
         // Ticker
         const ticker = document.getElementById('live-ticker');
@@ -1389,44 +1481,137 @@
             addChat(users[Math.floor(Math.random()*users.length)], msgs[Math.floor(Math.random()*msgs.length)]);
         }, 3500);
         liveIntervals.push(chatInt);
+
+    // Neural Bot Messages
+    const BOT_MSGS = [
+        "LINK_STATUS: Handshake sequence verified.",
+        "NOTICE: Bandwidth surge detected in Sector 4.",
+        "ENCRYPTION: Level 5 protocol active.",
+        "UPLINK_STABILITY: 99.4% average.",
+        "ALERT: Minimal packet loss from Lunar relay.",
+        "SYSTEM: Interface calibration complete."
+    ];
+    const botInt = setInterval(() => {
+        const msg = BOT_MSGS[Math.floor(Math.random() * BOT_MSGS.length)];
+        addChat("NEURAL_NET", msg, true);
+    }, 8000);
+    liveIntervals.push(botInt);
+    }
+
+    function renderStreamSelector() {
+        const selector = document.getElementById('stream-selector');
+        if (!selector) return;
+
+        selector.innerHTML = STREAMS.map(s => `
+            <div class="uplink-card ${s.id === activeStreamId ? 'active' : ''}" onclick="switchStream(${s.id})">
+                <div class="uplink-badge"><div class="live-dot"></div> LIVE</div>
+                <img src="${s.thumb}" class="uplink-thumb">
+                <div class="signal-bars">
+                    ${[1, 2, 3, 4, 5].map(i => `<div class="bar ${i <= s.signal ? 'active' : ''}" style="height:${i * 3}px;"></div>`).join('')}
+                </div>
+                <div style="font-size:0.55rem; padding:6px; text-align:center; background:rgba(0,0,0,0.8); border-top:1px solid rgba(255,255,255,0.05); font-weight:600;">
+                    ${s.name}
+                </div>
+            </div>
+        `).join('');
     }
 
     function switchStream(id) {
-        const stream = STREAMS.find(s => s.id === id);
-        if (!stream) return;
+        if (id === activeStreamId && document.getElementById('live-video').src) return;
 
+        const noise = document.getElementById('static-noise');
         const video = document.getElementById('live-video');
-        const nameEl = document.getElementById('stream-name');
-        const statusEl = document.getElementById('stream-status-label');
-        const signalEl = document.getElementById('stream-signal');
 
-        if (video) {
-            video.src = stream.url;
-            video.play();
-        }
-        if (nameEl) nameEl.innerText = stream.name;
-        if (statusEl) {
-            statusEl.innerText = "SIGNAL " + stream.status;
-            statusEl.style.color = stream.status === 'WARNING' ? 'var(--alert)' : 'var(--success)';
-        }
-        if (signalEl) {
-            signalEl.innerText = stream.signal;
-            signalEl.style.color = stream.status === 'WARNING' ? 'var(--alert)' : 'var(--success)';
-        }
+        // 1. Start Transition Effect
+        const tl = gsap.timeline();
+        tl.to(noise, { opacity: 0.8, duration: 0.1 })
+          .to(video, { filter: "contrast(2) brightness(2) blur(5px)", duration: 0.05 }, 0)
+          .add(() => {
+              // 2. Perform Switch Mid-Noise
+              activeStreamId = id;
+              const stream = STREAMS.find(s => s.id === id);
+              if (!stream) return;
 
-        // Flash Effect
-        gsap.fromTo(".video-player-frame", { opacity: 0.3 }, { opacity: 1, duration: 0.3 });
+              renderStreamSelector();
+
+              if (video) {
+                  video.src = stream.url;
+                  video.play();
+              }
+
+              const nameEl = document.getElementById('stream-name');
+              const statusEl = document.getElementById('stream-status-label');
+              const signalEl = document.getElementById('stream-signal');
+
+              if (nameEl) nameEl.innerText = stream.name;
+
+              // Random Technical Data
+              document.getElementById('link-bitrate').innerText = `BITRATE: ${(Math.random() * 50 + 10).toFixed(1)} Mbps`;
+              document.getElementById('stream-encryption').innerText = ["AES", "RSA", "P2P", "SSL"][Math.floor(Math.random() * 4)];
+
+              // Signal mapping
+              const signalPercent = stream.signal * 20;
+              if (signalEl) {
+                  signalEl.innerText = signalPercent + "%";
+                  signalEl.style.color = stream.signal < 2 ? 'var(--alert)' : (stream.signal < 4 ? 'var(--primary)' : 'var(--success)');
+              }
+              if (statusEl) {
+                  statusEl.innerText = "SIGNAL " + (stream.signal === 0 ? "LOST" : (stream.signal < 3 ? "UNSTABLE" : "STABLE"));
+                  statusEl.style.color = stream.signal < 3 ? 'var(--alert)' : 'var(--success)';
+              }
+          })
+          // 3. End Transition
+          .to(noise, { opacity: 0, duration: 0.2, delay: 0.1 })
+          .to(video, { filter: "contrast(1) brightness(1) blur(0px)", duration: 0.3 }, "-=0.2");
     }
 
-    function addChat(u, m) {
+    function toggleMute(btn) {
+        const video = document.getElementById('live-video');
+        video.muted = !video.muted;
+        btn.classList.toggle('active');
+        btn.innerHTML = video.muted ?
+            '<span class="material-symbols-outlined" style="font-size:14px;">volume_off</span> MUTED' :
+            '<span class="material-symbols-outlined" style="font-size:14px;">volume_up</span> AUDIO';
+    }
+
+    function toggleRec(btn) {
+        btn.classList.toggle('active');
+        btn.innerHTML = btn.classList.contains('active') ?
+            '<span class="material-symbols-outlined" style="font-size:14px; color:var(--alert);">fiber_manual_record</span> RECORDING' :
+            '<span class="material-symbols-outlined" style="font-size:14px;">fiber_manual_record</span> REC';
+    }
+
+    function toggleZoom(btn) {
+        const video = document.getElementById('live-video');
+        btn.classList.toggle('active');
+        gsap.to(video, { scale: btn.classList.contains('active') ? 1.5 : 1, duration: 0.4, ease: "power2.inOut" });
+    }
+
+    function addChat(u, m, isBot = false) {
         const chatContainer = document.getElementById('chat-container');
         if (!chatContainer) return;
         const div = document.createElement('div');
         div.className = 'chat-bubble';
-        div.innerHTML = `<span class="chat-user">${u}:</span> ${m}`;
+        if (isBot) {
+            div.style.borderLeft = "2px solid var(--accent)";
+            div.style.background = "rgba(0, 240, 255, 0.05)";
+        }
+        div.innerHTML = `<span class="chat-user" style="color:${isBot ? 'var(--success)' : 'var(--highlight)'}">${u}:</span> ${m}`;
         chatContainer.appendChild(div);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-        gsap.from(div, { x: -10, opacity: 0, duration: 0.3 });
+
+        // Snappy GSAP Entrance
+        gsap.from(div, {
+            x: -20,
+            opacity: 0,
+            duration: 0.3,
+            ease: "power2.out"
+        });
+
+        // Smooth Auto-scroll
+        chatContainer.scrollTo({
+            top: chatContainer.scrollHeight,
+            behavior: 'smooth'
+        });
     }
 
     function sendChatMessage() {
@@ -1473,6 +1658,19 @@
 
     /* --- INITIALIZATION --- */
     window.addEventListener('DOMContentLoaded', () => {
+        // Boot Sequence
+        const bootBar = document.getElementById('boot-bar');
+        const bootLoader = document.getElementById('boot-loader');
+        const bootText = document.getElementById('boot-text');
+
+        const bootTl = gsap.timeline();
+        bootTl.to(bootBar, { width: "100%", duration: 0.6, ease: "power2.inOut" })
+              .add(() => {
+                  if (bootText) bootText.innerHTML = "LINK ESTABLISHED.<br><span style='color:var(--success)'>IDENTITY SYNCED.</span>";
+                  gsap.to(bootBar, { backgroundColor: "var(--success)", duration: 0.1 });
+              })
+              .to(bootLoader, { opacity: 0, duration: 0.4, delay: 0.3, onComplete: () => bootLoader.remove() });
+
         NexusAuth.init();
         fetchNews();
         initLive();
