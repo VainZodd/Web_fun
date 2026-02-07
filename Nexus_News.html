@@ -546,7 +546,13 @@
 
     <!-- TOP HEADER -->
     <header class="top-bar">
-        <div class="brand">NEXUS<span>//</span>NEWS</div>
+        <div>
+            <div class="brand">NEXUS<span>//</span>NEWS</div>
+            <div style="font-size: 0.65rem; color: var(--text-muted); letter-spacing: 1px; margin-top: 4px; display: flex; align-items: center; gap: 8px;">
+                <span id="system-status" style="color: var(--success); font-weight: 700;">● SYNC: STABLE</span>
+                <span id="last-sync"></span>
+            </div>
+        </div>
         <button onclick="toggleFilters()" style="background:none; border:none; color:var(--primary); cursor:pointer;">
             <span class="material-symbols-outlined">tune</span>
         </button>
@@ -595,6 +601,9 @@
             <button onclick="navTo('dashboard')" class="btn-tech" style="margin-top: 30px; width: auto; padding: 10px 30px;">
                 <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">arrow_back</span> RETURN
             </button>
+            <a id="detail-link" target="_blank" class="btn-tech" style="margin-top: 30px; margin-left: 10px; width: auto; padding: 10px 30px; display: inline-flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined">open_in_new</span> ORIGINAL REPORT
+            </a>
         </div>
     </section>
 
@@ -735,7 +744,7 @@
         <p style="color: #ccc; font-size: 0.9rem; margin-bottom: 20px;">Unprecedented surge in sector 4 grid. Immediate attention required.</p>
         
         <button class="btn-tech" style="background: transparent; border: 1px solid var(--alert); color: var(--alert);" onclick="closeBreaking()">DISMISS</button>
-        <button class="btn-tech" style="background: var(--alert); margin-top: 10px;" onclick="navTo('detail'); closeBreaking();">ACCESS REPORT</button>
+        <button class="btn-tech" style="background: var(--alert); margin-top: 10px;" onclick="loadDetail(currentBreakingId); closeBreaking();">ACCESS REPORT</button>
     </div>
 
 </div> <!-- END APP -->
@@ -766,6 +775,7 @@
 
 <script>
     /* --- DATA STORE --- */
+    let currentBreakingId = null;
     let db = {
         news: [],
         timeline: [],
@@ -773,6 +783,20 @@
             { user: "Ghost_01", msg: "Did you see the flux?" },
             { user: "NeonRider", msg: "Signal is clean today." },
             { user: "SysAdmin", msg: "Monitoring bandwidth." }
+        ]
+    };
+
+    const FALLBACK_DATA = {
+        "World": [
+            {"title": "Neo-Tokyo Energy Crisis Averted", "source": "CyberWire", "link": "https://example.com/1"},
+            {"title": "Lunar Colony Expansion Approved", "source": "Orbital News", "link": "https://example.com/2"}
+        ],
+        "Technology": [
+            {"title": "Neural Link v4.0 Goes Open Source", "source": "TechPulse", "link": "https://example.com/3"},
+            {"title": "Quantum Encryption Breached?", "source": "BitShred", "link": "https://example.com/4"}
+        ],
+        "Business": [
+            {"title": "Arasaka Stock Rebounds After CEO Change", "source": "FinStream", "link": "https://example.com/5"}
         ]
     };
 
@@ -805,6 +829,9 @@
             console.error("Failed to fetch news:", error);
             if (cachedData) {
                 processNewsData(JSON.parse(cachedData));
+            } else {
+                console.log("Using Fallback Data...");
+                processNewsData(FALLBACK_DATA);
             }
         }
     }
@@ -850,6 +877,12 @@
 
         renderNews();
         renderTimeline();
+
+        // Update last sync time
+        const syncEl = document.getElementById('last-sync');
+        if (syncEl) {
+            syncEl.innerText = "| LAST UPDATE: " + new Date().toLocaleTimeString();
+        }
     }
 
     /* --- CORE FUNCTIONS --- */
@@ -901,6 +934,7 @@
 
     // Micro-interactions
     function initInteractions() {
+        // News Card Hover
         document.addEventListener('mouseover', (e) => {
             const card = e.target.closest('.news-card');
             if (card) {
@@ -913,6 +947,18 @@
                 gsap.to(card, { y: 0, duration: 0.2, ease: "power2.in" });
             }
         });
+
+        // Snappy Button Hover
+        document.addEventListener('mouseenter', (e) => {
+            if (e.target.classList && (e.target.classList.contains('btn-tech') || e.target.classList.contains('fab'))) {
+                gsap.to(e.target, { scale: 1.05, boxShadow: "0 0 20px var(--primary)", duration: 0.2 });
+            }
+        }, true);
+        document.addEventListener('mouseleave', (e) => {
+            if (e.target.classList && (e.target.classList.contains('btn-tech') || e.target.classList.contains('fab'))) {
+                gsap.to(e.target, { scale: 1, boxShadow: "none", duration: 0.2 });
+            }
+        }, true);
     }
 
     // Load News to Dashboard
@@ -933,7 +979,7 @@
                         <span class="card-cat">${item.cat}</span>
                         <h4 class="card-title">${item.title}</h4>
                         <div class="card-meta">
-                            <span>${item.region}</span>
+                            <span>${item.region} [SEC-${Math.floor(Math.random()*99)}]</span>
                             <span>${item.date}</span>
                         </div>
                     </div>
@@ -957,6 +1003,7 @@
     // Load Detail View
     function loadDetail(id) {
         const item = db.news.find(i => i.id === id);
+        if (!item) return;
         
         document.getElementById('detail-img').style.backgroundImage = `url(${item.img})`;
         document.getElementById('detail-title').innerText = item.title;
@@ -964,10 +1011,23 @@
         document.getElementById('detail-date').innerText = item.date;
         document.getElementById('detail-text').innerText = item.content + " Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.";
         
+        const linkBtn = document.getElementById('detail-link');
+        if (linkBtn) linkBtn.href = item.link || '#';
+
         const tags = document.getElementById('detail-tags');
         tags.innerHTML = `<span class="glow-badge">${item.cat}</span><span class="glow-badge" style="border-color:white; color:white;">VERIFIED</span>`;
         
         navTo('detail');
+
+        // Snappy Glitch Entrance
+        const content = document.querySelector('.detail-content-wrapper');
+        if (content) {
+            const tl = gsap.timeline();
+            tl.to(content, { x: 10, opacity: 0.5, duration: 0.05 })
+              .to(content, { x: -10, opacity: 0.8, duration: 0.05 })
+              .to(content, { x: 5, opacity: 0.3, duration: 0.05 })
+              .to(content, { x: 0, opacity: 1, duration: 0.1 });
+        }
     }
     
     // Wrapper for hotspot clicks
@@ -1107,6 +1167,7 @@
         setTimeout(() => {
             if (db.news.length > 0) {
                 const breaking = db.news[Math.floor(Math.random() * db.news.length)];
+                currentBreakingId = breaking.id;
                 const popup = document.getElementById('breaking-popup');
                 popup.querySelector('h3').innerText = breaking.title;
                 popup.querySelector('p').innerText = breaking.content;
