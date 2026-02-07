@@ -99,7 +99,7 @@
             position: absolute; width: 100%; height: 20px;
             background: linear-gradient(to bottom, transparent, var(--primary), transparent);
             opacity: 0.1;
-            pointer-events: none;
+            pointer-events: none !important;
             animation: scanline 3s linear infinite;
             z-index: 10;
         }
@@ -109,7 +109,7 @@
             background: url('https://media.giphy.com/media/oEI9uWUqWMrBK/giphy.gif');
             background-size: cover;
             opacity: 0;
-            pointer-events: none;
+            pointer-events: none !important;
             z-index: 20;
             mix-blend-mode: screen;
         }
@@ -353,6 +353,10 @@
             overflow: hidden;
             box-shadow: 0 0 30px rgba(0,0,0,0.8);
             margin-bottom: 10px;
+        }
+        #video-container {
+            z-index: 1;
+            pointer-events: auto;
         }
         .player-controls {
             display: flex; gap: 8px; margin-bottom: 20px;
@@ -725,7 +729,7 @@
                 <iframe id="live-video"
                         style="width: 100%; height: 100%; border: none; pointer-events: auto; opacity: 0.8;"
                         src=""
-                        allow="autoplay; encrypted-media; fullscreen"
+                        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
                         allowfullscreen></iframe>
             </div>
 
@@ -962,7 +966,14 @@
 
             btn.disabled = true;
             status.style.color = "var(--success)";
-            status.innerText = ">> SYNCING_IDENTITY...";
+
+            // Technical Status Cycle
+            const messages = [">> ACCESSING_GRID...", ">> SYNCING_IDENTITY...", ">> ENCRYPTING_SESSION..."];
+            let mIdx = 0;
+            const msgInt = setInterval(() => {
+                status.innerText = messages[mIdx++];
+                if (mIdx >= messages.length) clearInterval(msgInt);
+            }, 300);
 
             // Artificial delay for "snappy" but techy feel
             setTimeout(() => {
@@ -1076,6 +1087,11 @@
             processNewsData(data, false);
         } catch (error) {
             console.error("Link Failure. Reverting to local cache...", error);
+            const statusEl = document.getElementById('system-status');
+            if (statusEl) {
+                statusEl.innerText = "● DIAGNOSTIC_MODE";
+                statusEl.style.color = "var(--alert)";
+            }
             if (cachedData) {
                 processNewsData(JSON.parse(cachedData), true);
             } else {
@@ -1112,7 +1128,12 @@
         }
 
         // Ensure exactly Top 20 as requested
-        const top20 = flattenedNews.slice(0, 20).map((n, i) => ({...n, id: i}));
+        const top20 = flattenedNews.slice(0, 20).map((n, i) => ({
+            ...n,
+            id: i,
+            sector_id: Math.random().toString(16).slice(2, 6).toUpperCase(),
+            signature: btoa(n.title).slice(0, 12)
+        }));
 
         // Check for updates to trigger breaking news (only on fresh fetches)
         const lastHeadline = localStorage.getItem('nexus_last_headline');
@@ -1218,10 +1239,10 @@
             <div class="glass-panel news-card" onclick="loadDetail(${item.id})">
                 <img src="${item.img}" class="news-thumb" onerror="this.src='https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80'">
                 <div class="card-body">
-                    <span class="card-cat">${item.cat}</span>
+                    <span class="card-cat">${item.cat} // SEC-${item.sector_id}</span>
                     <h4 class="card-title">${item.title}</h4>
                     <div class="card-meta">
-                        <span>${item.region}</span>
+                        <span>${item.region} // SIG:${item.signature}</span>
                         <span>${item.date}</span>
                     </div>
                 </div>
@@ -1265,7 +1286,7 @@
                 opacity: 0,
                 y: -10,
                 filter: "brightness(2) contrast(2)",
-                duration: 0.15,
+                duration: 0.1,
                 ease: "power4.in",
                 onComplete: () => {
                     currentView.classList.add('hidden');
@@ -1278,9 +1299,17 @@
 
         function showTarget() {
             targetView.classList.remove('hidden');
-            gsap.fromTo(targetView,
-                { opacity: 0, y: 10, scale: 0.98, filter: "brightness(0.5)" },
-                { opacity: 1, y: 0, scale: 1, filter: "brightness(1)", duration: 0.25, ease: "power4.out" }
+
+            // Neural Handshake Glitch Transition
+            const handshakeTl = gsap.timeline();
+            handshakeTl.fromTo(targetView,
+                { opacity: 0, scaleY: 1.5, skewX: 10, filter: "hue-rotate(90deg) brightness(3)" },
+                { opacity: 1, scaleY: 1, skewX: 0, filter: "hue-rotate(0deg) brightness(1)", duration: 0.15, ease: "power4.out" }
+            )
+            .fromTo(targetView,
+                { x: 20 },
+                { x: 0, duration: 0.1, ease: "rough({ strength: 2, points: 10, template: power2.inout, taper: 'none', randomize: true })" },
+                "-=0.05"
             );
         }
 
@@ -1320,7 +1349,11 @@
             div.innerHTML = `<span style="color:var(--text-muted)">[${ts}]</span> <span style="color:var(--primary)">${lvl}::${sensor}</span> >> ${action} (v${val})`;
 
             consoleEl.appendChild(div);
-            gsap.to(div, { opacity: 1, duration: 0.3 });
+            // Enhanced Glitch Entrance
+            gsap.fromTo(div,
+                { opacity: 0, x: -5, scaleX: 1.2 },
+                { opacity: 1, x: 0, scaleX: 1, duration: 0.15, ease: "power4.out" }
+            );
 
             if (consoleEl.children.length > 20) {
                 consoleEl.removeChild(consoleEl.firstChild);
@@ -1342,17 +1375,21 @@
 
     // Micro-interactions
     function initInteractions() {
-        // News Card Hover
+        // News Card Glitch Hover
         document.addEventListener('mouseover', (e) => {
-            const card = e.target.closest('.news-card');
+            const card = e.target.closest('.news-card, .nav-item');
             if (card) {
-                gsap.to(card, { y: -5, duration: 0.2, ease: "power2.out" });
+                gsap.to(card, { y: -3, duration: 0.1, ease: "power4.out" });
+                // Random Glitch Pop
+                if (Math.random() > 0.5) {
+                    gsap.fromTo(card, { skewX: 5 }, { skewX: 0, duration: 0.05, repeat: 1, yoyo: true });
+                }
             }
         });
         document.addEventListener('mouseout', (e) => {
-            const card = e.target.closest('.news-card');
+            const card = e.target.closest('.news-card, .nav-item');
             if (card) {
-                gsap.to(card, { y: 0, duration: 0.2, ease: "power2.in" });
+                gsap.to(card, { y: 0, duration: 0.15, ease: "power4.in" });
             }
         });
 
@@ -1384,10 +1421,10 @@
                 <div class="glass-panel news-card" onclick="loadDetail(${item.id})">
                     <img src="${item.img}" class="news-thumb" onerror="this.src='https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80'">
                     <div class="card-body">
-                        <span class="card-cat">${item.cat}</span>
+                        <span class="card-cat">${item.cat} // SEC-${item.sector_id}</span>
                         <h4 class="card-title">${item.title}</h4>
                         <div class="card-meta">
-                            <span>${item.region} [SEC-${Math.floor(Math.random()*99)}]</span>
+                            <span>${item.region} // SIG:${item.signature}</span>
                             <span>${item.date}</span>
                         </div>
                     </div>
@@ -1455,10 +1492,10 @@
         const content = document.querySelector('.detail-content-wrapper');
         if (content) {
             const tl = gsap.timeline();
-            tl.to(content, { x: 10, opacity: 0.5, duration: 0.05 })
-              .to(content, { x: -10, opacity: 0.8, duration: 0.05 })
-              .to(content, { x: 5, opacity: 0.3, duration: 0.05 })
-              .to(content, { x: 0, opacity: 1, duration: 0.1 });
+            tl.to(content, { x: 10, opacity: 0.5, duration: 0.04 })
+              .to(content, { x: -10, opacity: 0.8, duration: 0.04 })
+              .to(content, { x: 5, opacity: 0.3, duration: 0.04 })
+              .to(content, { x: 0, opacity: 1, duration: 0.08 });
         }
     }
     
@@ -1801,7 +1838,7 @@
 
               if (video) {
                   // YouTube Live Stream Embed format by Channel ID
-                  video.src = `https://www.youtube.com/embed/live_stream?channel=${stream.cid}&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3`;
+                  video.src = `https://www.youtube.com/embed/live_stream?channel=${stream.cid}&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1`;
               }
 
               const nameEl = document.getElementById('stream-name');
@@ -1901,7 +1938,7 @@
     }
 
     /* --- INITIALIZATION --- */
-    window.addEventListener('DOMContentLoaded', () => {
+    window.addEventListener('DOMContentLoaded', async () => {
         // Boot Sequence
         const bootBar = document.getElementById('boot-bar');
         const bootLoader = document.getElementById('boot-loader');
@@ -1915,11 +1952,13 @@
                       bootText.style.color = "var(--success)";
                   }
                   gsap.to(bootBar, { backgroundColor: "var(--success)", duration: 0.1 });
-              })
-              .to(bootLoader, { opacity: 0, duration: 0.4, delay: 0.8, onComplete: () => bootLoader.remove() });
+              });
 
         NexusAuth.init();
-        fetchNews();
+        await fetchNews();
+
+        // Reveal App only after sync
+        bootTl.to(bootLoader, { opacity: 0, duration: 0.4, delay: 0.3, onComplete: () => bootLoader.remove() });
         initLive();
         initSearch();
         initInteractions();
