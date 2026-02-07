@@ -654,6 +654,17 @@
             </div>
         </div>
 
+        <!-- SYSTEM CONSOLE LOGS -->
+        <div class="glass-panel" style="border-radius: 12px; margin-bottom: 25px; padding: 12px; height: 120px; display: flex; flex-direction: column; overflow: hidden; border-left: 3px solid var(--primary);">
+            <div style="font-family: var(--font-head); font-size: 0.6rem; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between;">
+                <span>SYSTEM_CONSOLE // NEURAL_FEED</span>
+                <span id="console-latency">LATENCY: 24ms</span>
+            </div>
+            <div id="system-console" style="flex: 1; font-family: 'Courier New', monospace; font-size: 0.7rem; color: var(--highlight); overflow-y: auto; scrollbar-width: none;">
+                <!-- Logs injected -->
+            </div>
+        </div>
+
         <h3 class="text-neon" style="font-family: var(--font-head); margin-bottom: 20px;">LATEST TRANSMISSIONS</h3>
         <div class="news-grid" id="news-feed">
             <!-- News injected via JS -->
@@ -665,8 +676,8 @@
         <div class="detail-hero" id="detail-img"></div>
         <div class="glass-panel detail-content-wrapper">
             <div class="fab-group">
-                <button class="fab"><span class="material-symbols-outlined">share</span></button>
-                <button class="fab"><span class="material-symbols-outlined">bookmark</span></button>
+                <button id="btn-share" class="fab" onclick="shareLink()"><span class="material-symbols-outlined">share</span></button>
+                <button id="btn-bookmark" class="fab" onclick="toggleBookmark()"><span class="material-symbols-outlined">bookmark</span></button>
             </div>
             
             <div class="detail-badges" id="detail-tags">
@@ -707,12 +718,18 @@
         </div>
 
         <div class="video-player-frame">
-            <div class="scanline-effect"></div>
-            <div id="static-noise" class="static-overlay"></div>
-            <video id="live-video" loop muted autoplay style="width: 100%; height: 100%; object-fit: cover; opacity: 0.7;">
-                <source src="https://assets.mixkit.co/videos/preview/mixkit-futuristic-holographic-interface-902-large.mp4" type="video/mp4">
-            </video>
-            <div class="live-indicator"><div class="live-dot"></div> LIVE FEED</div>
+            <div class="scanline-effect" style="z-index: 5;"></div>
+            <div id="static-noise" class="static-overlay" style="z-index: 6;"></div>
+
+            <div id="video-container" style="width: 100%; height: 100%; pointer-events: auto;">
+                <iframe id="live-video"
+                        style="width: 100%; height: 100%; border: none; pointer-events: auto; opacity: 0.8;"
+                        src=""
+                        allow="autoplay; encrypted-media; fullscreen"
+                        allowfullscreen></iframe>
+            </div>
+
+            <div class="live-indicator" style="z-index: 10;"><div class="live-dot"></div> LIVE FEED</div>
             
             <!-- Technical Overlay -->
             <div style="position: absolute; top: 15px; right: 15px; text-align: right; font-family: var(--font-head); font-size: 0.55rem; color: var(--primary); pointer-events: none;">
@@ -723,7 +740,7 @@
 
             <!-- Fake UI Overlay -->
             <div style="position: absolute; bottom: 15px; left: 15px;">
-                <h4 id="stream-name" style="margin: 0; font-family: var(--font-head);">SECTOR 7 CAM A</h4>
+                <h4 id="stream-name" style="margin: 0; font-family: var(--font-head);">INITIALIZING UPLINK...</h4>
                 <span id="stream-status-label" style="font-size: 0.7rem; color: var(--success);">SIGNAL STABLE</span>
             </div>
         </div>
@@ -788,9 +805,22 @@
             </div>
         </div>
 
+        <!-- SECTOR ANALYSIS CHARTS -->
+        <div class="glass-panel" style="padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+            <div style="font-family: var(--font-head); font-size: 0.7rem; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 1px;">SECTOR ANALYSIS // DATA_DISTRIBUTION</div>
+            <div id="archive-stats-viz" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Charts injected -->
+            </div>
+        </div>
+
         <div class="search-container">
             <span class="material-symbols-outlined search-icon">search</span>
-            <input type="text" class="tech-input" placeholder="QUERY DATABASE...">
+            <input type="text" class="tech-input" id="archive-search" placeholder="QUERY DATABASE...">
+        </div>
+
+        <!-- CATEGORY PILLS -->
+        <div id="archive-filters" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 5px; scrollbar-width: none;">
+            <!-- Pills injected -->
         </div>
         
         <div class="news-grid" id="archive-feed">
@@ -886,6 +916,21 @@
 </nav>
 
 <script>
+    /* --- CORE UI UTILS --- */
+    function typeWriter(el, text, speed = 30) {
+        if (!el) return;
+        el.innerHTML = '';
+        let i = 0;
+        function type() {
+            if (i < text.length) {
+                el.innerHTML += text.charAt(i);
+                i++;
+                setTimeout(type, speed);
+            }
+        }
+        type();
+    }
+
     /* --- AUTH MANAGER --- */
     const NexusAuth = {
         currentUser: null,
@@ -978,6 +1023,7 @@
 
     /* --- DATA STORE --- */
     let currentBreakingId = null;
+    let currentDetailId = null;
     let db = {
         news: [],
         timeline: [],
@@ -1086,6 +1132,7 @@
 
         renderNews();
         renderTimeline();
+        renderArchiveStats();
 
         // Populate Tickers
         const tickers = ['global-ticker', 'live-ticker'];
@@ -1100,6 +1147,89 @@
         if (syncEl) {
             syncEl.innerText = "| LAST SYNC: " + new Date().toLocaleTimeString();
         }
+    }
+
+    function renderArchiveStats() {
+        const viz = document.getElementById('archive-stats-viz');
+        const filters = document.getElementById('archive-filters');
+        if (!viz || !filters) return;
+
+        const counts = {};
+        db.news.forEach(n => counts[n.cat] = (counts[n.cat] || 0) + 1);
+
+        const categories = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+        const max = Math.max(...Object.values(counts));
+
+        // Render Charts
+        viz.innerHTML = categories.map(cat => {
+            const percent = (counts[cat] / max) * 100;
+            return `
+                <div class="stat-bar-container" style="margin-bottom: 8px;">
+                    <div class="stat-label" style="margin-bottom: 2px;">
+                        <span>${cat}</span>
+                        <span style="color:var(--primary)">${counts[cat]} REPORTS</span>
+                    </div>
+                    <div class="bar-track" style="height: 4px; background: rgba(255,255,255,0.05);">
+                        <div class="bar-fill" style="width: ${percent}%; height: 100%; transition: width 1.5s var(--ease-tech);"></div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Render Filter Pills
+        filters.innerHTML = `<button class="glow-badge active" onclick="filterArchive('ALL', this)" style="cursor:pointer; white-space:nowrap;">ALL_SECTORS</button>` +
+            categories.map(cat => `
+                <button class="glow-badge" onclick="filterArchive('${cat}', this)" style="cursor:pointer; white-space:nowrap;">${cat}</button>
+            `).join('');
+    }
+
+    let activeFilter = 'ALL';
+    function filterArchive(cat, btn) {
+        activeFilter = cat;
+
+        // Update UI
+        document.querySelectorAll('#archive-filters .glow-badge').forEach(b => {
+            b.classList.remove('active');
+            b.style.background = 'rgba(138, 43, 226, 0.15)';
+            b.style.color = 'var(--highlight)';
+        });
+        btn.classList.add('active');
+        btn.style.background = 'var(--primary)';
+        btn.style.color = 'white';
+
+        applyArchiveFilters();
+    }
+
+    function applyArchiveFilters() {
+        const term = document.getElementById('archive-search').value.toLowerCase();
+        const filtered = db.news.filter(n => {
+            const matchesSearch = n.title.toLowerCase().includes(term) || n.region.toLowerCase().includes(term);
+            const matchesCat = activeFilter === 'ALL' || n.cat === activeFilter;
+            return matchesSearch && matchesCat;
+        });
+
+        const container = document.getElementById('archive-feed');
+        renderNewsGrid(container, filtered);
+    }
+
+    function renderNewsGrid(container, items) {
+        if (!container) return;
+        container.innerHTML = items.map(item => `
+            <div class="glass-panel news-card" onclick="loadDetail(${item.id})">
+                <img src="${item.img}" class="news-thumb" onerror="this.src='https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80'">
+                <div class="card-body">
+                    <span class="card-cat">${item.cat}</span>
+                    <h4 class="card-title">${item.title}</h4>
+                    <div class="card-meta">
+                        <span>${item.region}</span>
+                        <span>${item.date}</span>
+                    </div>
+                </div>
+            </div>`).join('');
+
+        gsap.from(container.querySelectorAll('.news-card'), {
+            opacity: 0, y: 10, duration: 0.2, stagger: 0.03, ease: "power2.out"
+        });
     }
 
     function triggerBreakingNews(item) {
@@ -1121,21 +1251,22 @@
     }
 
     /* --- CORE FUNCTIONS --- */
-    
+
     // Navigation Logic with GSAP (Snappy Transitions)
     function navTo(viewId) {
         const currentView = document.querySelector('.view-section:not(.hidden)');
         const targetView = document.getElementById(viewId);
-        
+
         if (currentView === targetView) return;
 
         // Animate Out
         if (currentView) {
             gsap.to(currentView, {
                 opacity: 0,
-                y: -5,
+                y: -10,
+                filter: "brightness(2) contrast(2)",
                 duration: 0.15,
-                ease: "power2.in",
+                ease: "power4.in",
                 onComplete: () => {
                     currentView.classList.add('hidden');
                     showTarget();
@@ -1148,8 +1279,8 @@
         function showTarget() {
             targetView.classList.remove('hidden');
             gsap.fromTo(targetView,
-                { opacity: 0, y: 5, scale: 0.99 },
-                { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: "power2.out" }
+                { opacity: 0, y: 10, scale: 0.98, filter: "brightness(0.5)" },
+                { opacity: 1, y: 0, scale: 1, filter: "brightness(1)", duration: 0.25, ease: "power4.out" }
             );
         }
 
@@ -1160,11 +1291,53 @@
             navBtn.classList.add('active');
             gsap.from(navBtn.querySelector('.material-symbols-outlined'), { scale: 0.5, duration: 0.2, ease: "back.out(2)" });
         }
-        
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
 
         // Re-init context specific features if needed
         if (viewId === 'live') initLive();
+    }
+
+    // System Console Logic
+    function updateConsoleLogs() {
+        const consoleEl = document.getElementById('system-console');
+        if (!consoleEl) return;
+
+        const LOG_LEVELS = ["INFO", "DEBUG", "WARN", "CRIT", "SYNC"];
+        const SENSORS = ["NEURAL_LINK", "QUANTUM_RELAY", "GRID_ANALYZER", "CORE_BUFFER", "SCRAPER_BOT_7"];
+        const ACTIONS = ["CONNECTED", "DISCONNECTED", "PACKET_LOSS", "LATENCY_SPIKE", "ENCRYPTION_ACTIVE", "DATA_HARVESTED", "REDUNDANCY_CHECK", "BYPASS_ATTEMPT"];
+
+        function addLog() {
+            const ts = new Date().toLocaleTimeString();
+            const lvl = LOG_LEVELS[Math.floor(Math.random() * LOG_LEVELS.length)];
+            const sensor = SENSORS[Math.floor(Math.random() * SENSORS.length)];
+            const action = ACTIONS[Math.floor(Math.random() * ACTIONS.length)];
+            const val = Math.floor(Math.random() * 899) + 100;
+
+            const div = document.createElement('div');
+            div.style.marginBottom = "2px";
+            div.style.opacity = "0";
+            div.innerHTML = `<span style="color:var(--text-muted)">[${ts}]</span> <span style="color:var(--primary)">${lvl}::${sensor}</span> >> ${action} (v${val})`;
+
+            consoleEl.appendChild(div);
+            gsap.to(div, { opacity: 1, duration: 0.3 });
+
+            if (consoleEl.children.length > 20) {
+                consoleEl.removeChild(consoleEl.firstChild);
+            }
+
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+
+            // Update Latency
+            const latEl = document.getElementById('console-latency');
+            if (latEl) latEl.innerText = `LATENCY: ${Math.floor(Math.random() * 40) + 10}ms`;
+        }
+
+        // Initial logs
+        for(let i=0; i<5; i++) addLog();
+
+        // Loop
+        setInterval(addLog, 2000);
     }
 
     // Micro-interactions
@@ -1201,7 +1374,7 @@
         const container = document.getElementById('news-feed');
         const archive = document.getElementById('archive-feed');
         if (!container) return;
-        
+
         let html = '';
         if (db.news.length === 0) {
             html = '<div class="skeleton" style="height: 200px; width: 100%; border-radius: 12px;"></div>'.repeat(3);
@@ -1241,6 +1414,7 @@
 
     // Load Detail View
     function loadDetail(id) {
+        currentDetailId = id;
         const item = db.news.find(i => i.id === id);
         if (!item) return;
 
@@ -1253,10 +1427,18 @@
                 if (NexusAuth.currentUser.history.length > 5) NexusAuth.currentUser.history.pop();
                 localStorage.setItem('nexus_user', JSON.stringify(NexusAuth.currentUser));
             }
+
+            // Update Bookmark Button UI
+            const isBookmarked = (NexusAuth.currentUser.bookmarks || []).includes(id);
+            const btn = document.getElementById('btn-bookmark');
+            if(btn) {
+                btn.style.background = isBookmarked ? 'var(--primary)' : '#000';
+                btn.style.color = isBookmarked ? 'white' : 'var(--text-main)';
+            }
         }
         
         document.getElementById('detail-img').style.backgroundImage = `url(${item.img})`;
-        document.getElementById('detail-title').innerText = item.title;
+        typeWriter(document.getElementById('detail-title'), item.title, 20);
         document.getElementById('detail-region').innerText = item.region;
         document.getElementById('detail-date').innerText = item.date;
         document.getElementById('detail-text').innerText = item.content + " Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.";
@@ -1305,6 +1487,64 @@
                 <p style="margin:0; font-size: 0.85rem; color: #aaa;">${item.desc}</p>
             </div>`;
         });
+    }
+
+    // Detail View Features
+    function toggleBookmark() {
+        if (!NexusAuth.currentUser) {
+            toggleAuthModal();
+            return;
+        }
+
+        if (!NexusAuth.currentUser.bookmarks) NexusAuth.currentUser.bookmarks = [];
+        const idx = NexusAuth.currentUser.bookmarks.indexOf(currentDetailId);
+
+        const btn = document.getElementById('btn-bookmark');
+        if (idx === -1) {
+            NexusAuth.currentUser.bookmarks.push(currentDetailId);
+            btn.style.background = 'var(--primary)';
+            btn.style.color = 'white';
+            gsap.from(btn, { scale: 1.5, duration: 0.3, ease: "back.out" });
+        } else {
+            NexusAuth.currentUser.bookmarks.splice(idx, 1);
+            btn.style.background = '#000';
+            btn.style.color = 'var(--text-main)';
+        }
+
+        localStorage.setItem('nexus_user', JSON.stringify(NexusAuth.currentUser));
+        renderProfile();
+    }
+
+    function shareLink() {
+        const item = db.news.find(n => n.id === currentDetailId);
+        if (!item) return;
+
+        const dummy = document.createElement('input');
+        document.body.appendChild(dummy);
+        dummy.value = item.link || window.location.href;
+        dummy.select();
+        document.execCommand('copy');
+        document.body.removeChild(dummy);
+
+        const btn = document.getElementById('btn-share');
+        const originalIcon = btn.innerHTML;
+        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">done</span>';
+        btn.style.background = 'var(--success)';
+
+        setTimeout(() => {
+            btn.innerHTML = originalIcon;
+            btn.style.background = '#000';
+        }, 2000);
+
+        // Show notification
+        const status = document.getElementById('system-status');
+        const originalStatus = status.innerText;
+        status.innerText = "● LINK_COPIED";
+        status.style.color = "var(--primary)";
+        setTimeout(() => {
+            status.innerText = originalStatus;
+            status.style.color = "var(--success)";
+        }, 3000);
     }
 
     // Filters
@@ -1382,7 +1622,7 @@
             </div>
 
             <h3 style="font-family: var(--font-head); margin-bottom: 15px;" class="text-neon">NEURAL HISTORY</h3>
-            <div class="glass-panel" style="border-radius: 12px; padding: 5px;">
+            <div class="glass-panel" style="border-radius: 12px; padding: 5px; margin-bottom: 25px;">
                 ${user.history && user.history.length > 0 ?
                     user.history.map(h => `
                         <div class="region-control" style="cursor:pointer;" onclick="loadDetail(${h.id})">
@@ -1394,6 +1634,25 @@
                         </div>
                     `).join('') :
                     '<div style="padding: 20px; text-align: center; color: var(--text-muted);">NO RECENT LOGS FOUND</div>'
+                }
+            </div>
+
+            <h3 style="font-family: var(--font-head); margin-bottom: 15px;" class="text-neon">BOOKMARKS</h3>
+            <div class="glass-panel" style="border-radius: 12px; padding: 5px;">
+                ${user.bookmarks && user.bookmarks.length > 0 ?
+                    user.bookmarks.map(bid => {
+                        const item = db.news.find(n => n.id === bid);
+                        if (!item) return '';
+                        return `
+                        <div class="region-control" style="cursor:pointer;" onclick="loadDetail(${item.id})">
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="font-weight:600; font-size:0.9rem;">${item.title}</span>
+                                <span style="font-size:0.7rem; color:var(--text-muted);">${item.cat} // ${item.region}</span>
+                            </div>
+                            <span class="material-symbols-outlined" style="font-size: 16px; color: var(--primary);">bookmark</span>
+                        </div>`;
+                    }).join('') :
+                    '<div style="padding: 20px; text-align: center; color: var(--text-muted);">NO BOOKMARKS SAVED</div>'
                 }
             </div>
         `;
@@ -1414,15 +1673,15 @@
         }
     }
 
-    // Live Simulations
+    // Live News Streams (YouTube Channel IDs)
     let liveIntervals = [];
     const STREAMS = [
-        { id: 0, name: "SECTOR 7 CAM A", status: "STABLE", url: "https://assets.mixkit.co/videos/preview/mixkit-futuristic-holographic-interface-902-large.mp4", signal: 5, thumb: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=200&q=80" },
-        { id: 1, name: "LUNAR OUTPOST 4", status: "STABLE", url: "https://assets.mixkit.co/videos/preview/mixkit-digital-animation-of-a-world-map-with-lines-and-dots-24515-large.mp4", signal: 4, thumb: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=200&q=80" },
-        { id: 2, name: "ORBITAL HUB 12", status: "WARNING", url: "https://assets.mixkit.co/videos/preview/mixkit-abstract-technology-screen-with-numbers-and-data-24758-large.mp4", signal: 2, thumb: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=200&q=80" },
-        { id: 3, name: "DEEP SEA CORE", status: "STABLE", url: "https://assets.mixkit.co/videos/preview/mixkit-waves-in-the-water-1565-large.mp4", signal: 3, thumb: "https://images.unsplash.com/photo-1551244072-5d12893278ab?auto=format&fit=crop&w=200&q=80" },
-        { id: 4, name: "MARS COLONY A1", status: "LOST", url: "https://assets.mixkit.co/videos/preview/mixkit-dust-and-light-particles-in-the-air-2345-large.mp4", signal: 0, thumb: "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?auto=format&fit=crop&w=200&q=80" },
-        { id: 5, name: "BIO-LAB DELTA", status: "STABLE", url: "https://assets.mixkit.co/videos/preview/mixkit-close-up-of-a-green-plant-leaf-2384-large.mp4", signal: 5, thumb: "https://images.unsplash.com/photo-1530836361253-efad5cb2f6de?auto=format&fit=crop&w=200&q=80" }
+        { id: 0, name: "SKY NEWS (UK)", status: "STABLE", cid: "UC0p5jTq6VN_Ozjjlp0vH9qA", signal: 5, thumb: "https://images.unsplash.com/photo-1585829365234-781f75d9c2ca?auto=format&fit=crop&w=200&q=80" },
+        { id: 1, name: "AL JAZEERA", status: "STABLE", cid: "UCNye-wNBqNL5ZzHSJj3l8Bg", signal: 4, thumb: "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=200&q=80" },
+        { id: 2, name: "DW NEWS (ENG)", status: "STABLE", cid: "UCknLrEdhRCp1aegoPtTNnxA", signal: 4, thumb: "https://images.unsplash.com/photo-1504711434969-e33886168f5c?auto=format&fit=crop&w=200&q=80" },
+        { id: 3, name: "ABC NEWS (US)", status: "WARNING", cid: "UCBi2erQHkG74fkW3XWuQDnQ", signal: 3, thumb: "https://images.unsplash.com/photo-1529107386315-e1a2ed48a620?auto=format&fit=crop&w=200&q=80" },
+        { id: 4, name: "FRANCE 24", status: "STABLE", cid: "UC8AM7A11YcI0_V88L6_fS-g", signal: 5, thumb: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?auto=format&fit=crop&w=200&q=80" },
+        { id: 5, name: "BLOOMBERG", status: "STABLE", cid: "UCIALMKvObAkpaFVohLYqdfw", signal: 5, thumb: "https://images.unsplash.com/photo-1611974717483-363e1730da46?auto=format&fit=crop&w=200&q=80" }
     ];
 
     let activeStreamId = 0;
@@ -1433,6 +1692,11 @@
         liveIntervals = [];
 
         renderStreamSelector();
+
+        // Auto-load first stream if none active
+        if (document.getElementById('live-video').src === "" || document.getElementById('live-video').src.includes('Nexus_News.html')) {
+            switchStream(activeStreamId);
+        }
 
         // Ticker
         const ticker = document.getElementById('live-ticker');
@@ -1517,15 +1781,16 @@
     }
 
     function switchStream(id) {
-        if (id === activeStreamId && document.getElementById('live-video').src) return;
+        // Prevent redundant switching but allow if current src is empty
+        if (id === activeStreamId && document.getElementById('live-video').src !== "") return;
 
         const noise = document.getElementById('static-noise');
         const video = document.getElementById('live-video');
 
         // 1. Start Transition Effect
         const tl = gsap.timeline();
-        tl.to(noise, { opacity: 0.8, duration: 0.1 })
-          .to(video, { filter: "contrast(2) brightness(2) blur(5px)", duration: 0.05 }, 0)
+        tl.to(noise, { opacity: 0.8, duration: 0.15 })
+          .to(video, { filter: "contrast(3) brightness(2) blur(10px)", opacity: 0.3, duration: 0.1 }, 0)
           .add(() => {
               // 2. Perform Switch Mid-Noise
               activeStreamId = id;
@@ -1535,8 +1800,8 @@
               renderStreamSelector();
 
               if (video) {
-                  video.src = stream.url;
-                  video.play();
+                  // YouTube Live Stream Embed format by Channel ID
+                  video.src = `https://www.youtube.com/embed/live_stream?channel=${stream.cid}&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3`;
               }
 
               const nameEl = document.getElementById('stream-name');
@@ -1562,16 +1827,21 @@
           })
           // 3. End Transition
           .to(noise, { opacity: 0, duration: 0.2, delay: 0.1 })
-          .to(video, { filter: "contrast(1) brightness(1) blur(0px)", duration: 0.3 }, "-=0.2");
+          .to(video, { filter: "contrast(1) brightness(1) blur(0px)", opacity: 0.8, duration: 0.3 }, "-=0.2");
     }
 
     function toggleMute(btn) {
         const video = document.getElementById('live-video');
-        video.muted = !video.muted;
+        const isMuted = video.src.includes('mute=1');
+
         btn.classList.toggle('active');
-        btn.innerHTML = video.muted ?
-            '<span class="material-symbols-outlined" style="font-size:14px;">volume_off</span> MUTED' :
-            '<span class="material-symbols-outlined" style="font-size:14px;">volume_up</span> AUDIO';
+        if (isMuted) {
+            video.src = video.src.replace('mute=1', 'mute=0');
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;">volume_up</span> AUDIO';
+        } else {
+            video.src = video.src.replace('mute=0', 'mute=1');
+            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:14px;">volume_off</span> MUTED';
+        }
     }
 
     function toggleRec(btn) {
@@ -1625,35 +1895,9 @@
 
     // Archive Search
     function initSearch() {
-        const input = document.querySelector('#archive .tech-input');
+        const input = document.getElementById('archive-search');
         if (!input) return;
-
-        input.addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = db.news.filter(n =>
-                n.title.toLowerCase().includes(term) ||
-                n.region.toLowerCase().includes(term) ||
-                n.cat.toLowerCase().includes(term)
-            );
-
-            const container = document.getElementById('archive-feed');
-            let html = '';
-            filtered.forEach(item => {
-                html += `
-                <div class="glass-panel news-card" onclick="loadDetail(${item.id})">
-                    <img src="${item.img}" class="news-thumb" onerror="this.src='https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80'">
-                    <div class="card-body">
-                        <span class="card-cat">${item.cat}</span>
-                        <h4 class="card-title">${item.title}</h4>
-                        <div class="card-meta">
-                            <span>${item.region}</span>
-                            <span>${item.date}</span>
-                        </div>
-                    </div>
-                </div>`;
-            });
-            container.innerHTML = html;
-        });
+        input.addEventListener('input', () => applyArchiveFilters());
     }
 
     /* --- INITIALIZATION --- */
@@ -1664,18 +1908,22 @@
         const bootText = document.getElementById('boot-text');
 
         const bootTl = gsap.timeline();
-        bootTl.to(bootBar, { width: "100%", duration: 0.6, ease: "power2.inOut" })
+        bootTl.to(bootBar, { width: "100%", duration: 0.8, ease: "power4.inOut" })
               .add(() => {
-                  if (bootText) bootText.innerHTML = "LINK ESTABLISHED.<br><span style='color:var(--success)'>IDENTITY SYNCED.</span>";
+                  if (bootText) {
+                      typeWriter(bootText, "LINK ESTABLISHED. IDENTITY SYNCED.");
+                      bootText.style.color = "var(--success)";
+                  }
                   gsap.to(bootBar, { backgroundColor: "var(--success)", duration: 0.1 });
               })
-              .to(bootLoader, { opacity: 0, duration: 0.4, delay: 0.3, onComplete: () => bootLoader.remove() });
+              .to(bootLoader, { opacity: 0, duration: 0.4, delay: 0.8, onComplete: () => bootLoader.remove() });
 
         NexusAuth.init();
         fetchNews();
         initLive();
         initSearch();
         initInteractions();
+        updateConsoleLogs();
 
         // 30-minute auto-refresh check
         setInterval(() => {
