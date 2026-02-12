@@ -52,7 +52,6 @@
             color: var(--text-main);
             font-family: var(--font-body);
             overflow-x: hidden;
-            /* Advanced Grid Background */
             background-image: 
                 linear-gradient(rgba(138, 43, 226, 0.05) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(138, 43, 226, 0.05) 1px, transparent 1px);
@@ -60,18 +59,15 @@
             min-height: 100vh;
         }
 
-        /* Custom Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-deep); }
         ::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 3px; }
 
-        /* --- UTILITY CLASSES --- */
         .hidden { display: none !important; opacity: 0; }
         .flex-center { display: flex; justify-content: center; align-items: center; }
         .text-neon { text-shadow: 0 0 8px var(--primary); color: var(--highlight); }
         .text-alert { text-shadow: 0 0 8px var(--alert); color: var(--alert); }
         
-        /* High-End Glassmorphism */
         .glass-panel {
             background: var(--glass-bg);
             backdrop-filter: var(--glass-blur);
@@ -81,20 +77,11 @@
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
 
-        /* Animations */
         @keyframes fadeInView {
-            from { opacity: 0; transform: translateY(20px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes pulseGlow {
-            0% { box-shadow: 0 0 5px var(--primary); }
-            50% { box-shadow: 0 0 20px var(--accent); }
-            100% { box-shadow: 0 0 5px var(--primary); }
-        }
-        @keyframes scanline {
-            0% { top: 0; }
-            100% { top: 100%; }
-        }
+
         .scanline-effect {
             position: absolute; width: 100%; height: 20px;
             background: linear-gradient(to bottom, transparent, var(--primary), transparent);
@@ -103,6 +90,7 @@
             animation: scanline 3s linear infinite;
             z-index: 10;
         }
+        @keyframes scanline { 0% { top: 0; } 100% { top: 100%; } }
 
         .static-overlay {
             position: absolute; inset: 0;
@@ -110,19 +98,17 @@
             background-size: cover;
             opacity: 0;
             pointer-events: none !important;
-            z-index: 11;
+            z-index: 1000;
             mix-blend-mode: screen;
         }
 
-        /* --- APP CONTAINER --- */
         #app {
             max-width: 1200px;
             margin: 0 auto;
-            padding-bottom: 90px; /* Space for nav */
+            padding-bottom: 90px;
             position: relative;
         }
 
-        /* --- HEADER --- */
         .top-bar {
             padding: 20px;
             display: flex;
@@ -137,14 +123,13 @@
         .brand { font-family: var(--font-head); font-weight: 900; letter-spacing: 2px; font-size: 1.5rem; }
         .brand span { color: var(--primary); }
         
-        /* --- NAVIGATION (Bottom Dock) --- */
         .nav-dock {
             position: fixed;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             width: 90%;
-            max-width: 600px;
+            max-width: 500px;
             height: 70px;
             background: rgba(10, 10, 10, 0.85);
             backdrop-filter: blur(20px);
@@ -157,7 +142,6 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.8);
             overflow: hidden;
         }
-        /* Neon Line on Top of Nav */
         .nav-dock::before {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 1px;
             background: linear-gradient(90deg, transparent, var(--primary), transparent);
@@ -173,31 +157,32 @@
             cursor: pointer;
             width: 100%;
             height: 100%;
-            transition: all 0.3s var(--ease-tech);
+            transition: all 0.2s var(--ease-tech);
             position: relative;
         }
-        .nav-item .material-symbols-outlined { font-size: 24px; margin-bottom: 4px; transition: 0.3s; }
+        .nav-item .material-symbols-outlined { font-size: 24px; margin-bottom: 4px; transition: 0.2s; }
         .nav-item span { font-size: 10px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
-        
         .nav-item.active { color: var(--text-main); }
-        .nav-item.active .material-symbols-outlined { 
-            color: var(--accent); 
-            text-shadow: 0 0 10px var(--primary);
-            transform: translateY(-2px);
-        }
-        /* Active Indicator Dot */
+        .nav-item.active .material-symbols-outlined { color: var(--accent); text-shadow: 0 0 10px var(--primary); }
         .nav-item.active::after {
             content: ''; position: absolute; bottom: 8px; width: 4px; height: 4px;
             background: var(--accent); border-radius: 50%; box-shadow: 0 0 8px var(--accent);
         }
 
-        /* --- VIEWS STRUCTURE --- */
         .view-section {
             padding: 0 20px;
-            animation: fadeInView 0.6s var(--ease-tech) forwards;
+            animation: fadeInView 0.3s var(--ease-tech) forwards;
         }
 
-        /* --- DASHBOARD VIEW --- */
+        /* Views Thematic Context */
+        .module-header {
+            margin-bottom: 20px;
+            border-left: 4px solid var(--primary);
+            padding-left: 15px;
+        }
+        .module-title { font-family: var(--font-head); font-size: 1.8rem; margin: 0; letter-spacing: 1px; }
+        .module-subtitle { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 2px; }
+
         .world-map-container {
             position: relative;
             height: 280px;
@@ -206,1208 +191,446 @@
             margin-bottom: 30px;
             border: 1px solid rgba(138, 43, 226, 0.3);
             background: radial-gradient(circle at center, #1a0b2e 0%, #050505 100%);
-            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
         }
         .map-bg {
             width: 100%; height: 100%;
             background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/World_map_blank_without_borders.svg/2000px-World_map_blank_without_borders.svg.png');
-            background-size: cover;
-            background-position: center;
-            filter: invert(1) hue-rotate(240deg) brightness(0.6) contrast(1.2) opacity(0.5);
+            background-size: cover; background-position: center;
+            filter: invert(1) hue-rotate(240deg) brightness(0.6) opacity(0.5);
             mix-blend-mode: screen;
         }
         .hotspot {
-            position: absolute;
-            width: 8px; height: 8px;
-            background: var(--accent);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--accent);
-            cursor: pointer;
-            transition: transform 0.2s var(--ease-tech);
-        }
-        .hotspot:hover {
-            transform: scale(2);
-            box-shadow: 0 0 20px var(--accent);
-            z-index: 100;
+            position: absolute; width: 8px; height: 8px; background: var(--accent); border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent); cursor: pointer;
         }
         .hotspot::after {
             content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            border: 1px solid var(--accent); border-radius: 50%;
-            animation: ripple 2s infinite ease-out;
+            border: 1px solid var(--accent); border-radius: 50%; animation: ripple 2s infinite ease-out;
         }
         @keyframes ripple { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(3); opacity: 0; } }
 
-        .news-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-        }
-        .news-card {
-            border-radius: 12px;
-            overflow: hidden;
-            transition: border-color 0.3s;
-            cursor: pointer;
-            position: relative;
-        }
-        .news-card:hover {
-            box-shadow: var(--shadow-neon);
-            border-color: var(--primary);
-        }
-        .news-thumb {
-            height: 160px;
-            width: 100%;
-            object-fit: cover;
-            filter: grayscale(40%);
-            transition: 0.3s;
-        }
+        .news-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .news-card { border-radius: 12px; overflow: hidden; cursor: pointer; position: relative; border: 1px solid rgba(255,255,255,0.05); }
+        .news-card:hover { box-shadow: var(--shadow-neon); border-color: var(--primary); }
+        .news-thumb { height: 160px; width: 100%; object-fit: cover; filter: grayscale(40%); transition: 0.3s; }
         .news-card:hover .news-thumb { filter: grayscale(0%); }
         .card-body { padding: 15px; }
         .card-cat {
-            font-size: 10px; font-weight: 700; color: var(--accent);
-            border: 1px solid var(--primary); padding: 2px 6px; border-radius: 4px;
-            text-transform: uppercase; margin-bottom: 8px; display: inline-block;
+            font-size: 10px; font-weight: 700; color: var(--accent); border: 1px solid var(--primary);
+            padding: 2px 6px; border-radius: 4px; text-transform: uppercase; margin-bottom: 8px; display: inline-block;
         }
         .card-title { font-family: var(--font-head); font-size: 1.1rem; margin-bottom: 5px; line-height: 1.4; }
         .card-meta { font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between; }
 
-        /* --- DETAIL VIEW --- */
-        .detail-hero {
-            height: 40vh;
-            width: 100%;
-            background-size: cover;
-            background-position: center;
-            position: relative;
-            mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
-            margin-bottom: -80px;
-        }
-        .detail-content-wrapper {
-            position: relative;
-            z-index: 10;
-            padding: 30px;
-            border-radius: 24px 24px 0 0;
-            margin: 0 10px;
-        }
-        .detail-badges { display: flex; gap: 10px; margin-bottom: 20px; }
-        .glow-badge {
-            background: rgba(138, 43, 226, 0.15);
-            color: var(--highlight);
-            border: 1px solid var(--primary);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            box-shadow: 0 0 10px rgba(138, 43, 226, 0.2);
-            text-transform: uppercase;
-        }
-        .fab-group {
-            position: absolute; top: -30px; right: 20px;
-            display: flex; flex-direction: column; gap: 15px;
-        }
-        .fab {
-            width: 50px; height: 50px;
-            border-radius: 50%;
-            background: #000;
-            border: 1px solid var(--accent);
-            color: var(--text-main);
-            display: flex; justify-content: center; align-items: center;
-            box-shadow: 0 0 15px rgba(188, 19, 254, 0.4);
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .fab:hover { background: var(--accent); transform: scale(1.1); }
+        .ticker-container { width: 100%; background: rgba(138, 43, 226, 0.1); border-bottom: 1px solid var(--primary); overflow: hidden; white-space: nowrap; padding: 8px 0; }
+        .ticker-content { display: inline-block; padding-left: 100%; animation: ticker 40s linear infinite; }
+        .ticker-item { display: inline-block; padding: 0 40px; font-family: var(--font-head); font-size: 0.9rem; color: var(--highlight); }
+        @keyframes ticker { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(-100%, 0, 0); } }
 
-        /* --- TIMELINE VIEW --- */
-        .timeline-wrapper {
-            position: relative;
-            padding-left: 30px;
-            border-left: 2px solid rgba(138, 43, 226, 0.3);
-            margin-left: 20px;
-        }
-        .timeline-wrapper::after {
-            content: ''; position: absolute; top: 0; bottom: 0; left: -1px; width: 2px;
-            background: linear-gradient(to bottom, transparent, var(--accent), transparent);
-            box-shadow: 0 0 15px var(--accent);
-        }
-        .timeline-node {
-            position: relative;
-            margin-bottom: 40px;
-        }
-        .node-dot {
-            position: absolute; left: -39px; top: 15px;
-            width: 16px; height: 16px;
-            background: #050505;
-            border: 2px solid var(--accent);
-            border-radius: 50%;
-            z-index: 2;
-            transition: 0.3s;
-        }
-        .timeline-node:hover .node-dot {
-            background: var(--accent);
-            box-shadow: 0 0 15px var(--accent);
-            transform: scale(1.3);
-        }
-        .time-label { font-family: var(--font-head); color: var(--primary); font-size: 0.9rem; margin-bottom: 5px; }
-
-
-        /* News Ticker */
-        .ticker-container {
-            width: 100%;
-            background: rgba(138, 43, 226, 0.1);
-            border-bottom: 1px solid var(--primary);
-            overflow: hidden;
-            white-space: nowrap;
-            padding: 8px 0;
-            margin-bottom: 20px;
-        }
-        .ticker-content {
-            display: inline-block;
-            padding-left: 100%;
-            animation: ticker 30s linear infinite;
-        }
-        .ticker-item {
-            display: inline-block;
-            padding: 0 40px;
-            font-family: var(--font-head);
-            font-size: 0.9rem;
-            color: var(--highlight);
-        }
-        @keyframes ticker {
-            0% { transform: translate3d(0, 0, 0); }
-            100% { transform: translate3d(-100%, 0, 0); }
-        }
-
-        /* Tech Toggles */
-        .region-control {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px; margin-bottom: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-        .tech-switch {
-            position: relative; width: 50px; height: 26px;
-            -webkit-appearance: none; background: #222;
-            border-radius: 20px; outline: none; cursor: pointer;
-            box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
-            transition: 0.4s; border: 1px solid #444;
-        }
-        .tech-switch:checked { background: var(--primary); border-color: var(--accent); box-shadow: 0 0 10px var(--primary); }
-        .tech-switch::before {
-            content: ''; position: absolute; width: 20px; height: 20px;
-            border-radius: 50%; top: 2px; left: 2px;
-            background: #fff; transition: 0.4s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-        }
-        .tech-switch:checked::before { transform: translateX(24px); }
-
-        /* Stat Bars */
-        .stat-bar-container { margin-bottom: 15px; }
-        .stat-label { font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .bar-track { width: 100%; height: 6px; background: #222; border-radius: 3px; overflow: hidden; }
-        .bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); width: 0%; transition: width 1s ease-out; box-shadow: 0 0 10px var(--primary); }
-
-        /* --- ARCHIVE VIEW --- */
-        .search-container { position: relative; margin-bottom: 25px; }
-        .tech-input {
-            width: 100%; padding: 15px 15px 15px 45px;
-            background: rgba(0,0,0,0.5); border: 1px solid var(--primary);
-            border-radius: 8px; color: white; font-family: var(--font-body); font-size: 1rem;
-            outline: none; transition: 0.3s;
-        }
-        .tech-input:focus { box-shadow: var(--shadow-neon); border-color: var(--accent); }
-        .search-icon { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--primary); }
-
-        /* --- MODAL (Filters) --- */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.95);
-            z-index: 200; display: flex; align-items: center; justify-content: center;
-            backdrop-filter: blur(10px);
-        }
-        .filter-content {
-            width: 90%; max-width: 450px;
-            background: #0a0a0a; border: 1px solid var(--primary);
-            border-radius: 16px; padding: 30px;
-            box-shadow: 0 0 50px rgba(138, 43, 226, 0.2);
-            position: relative;
-        }
-        .modal-header {
-            font-family: var(--font-head); font-size: 1.5rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            padding-bottom: 15px; margin-bottom: 20px;
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .tech-slider {
-            -webkit-appearance: none; width: 100%; height: 4px;
-            background: #333; outline: none; margin: 20px 0;
-        }
-        .tech-slider::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 20px; height: 20px;
-            background: var(--accent); border-radius: 50%; cursor: pointer;
-            box-shadow: 0 0 10px var(--accent); border: 2px solid #fff;
-        }
         .btn-tech {
             width: 100%; padding: 15px; background: var(--primary); color: white;
-            font-family: var(--font-head); font-weight: 700; border: none;
-            border-radius: 8px; cursor: pointer; letter-spacing: 1px;
-            transition: 0.3s; margin-top: 10px;
-            text-transform: uppercase;
+            font-family: var(--font-head); font-weight: 700; border: none; border-radius: 8px;
+            cursor: pointer; letter-spacing: 1px; transition: 0.2s; text-transform: uppercase;
         }
         .btn-tech:hover { background: var(--accent); box-shadow: var(--shadow-neon); }
 
-        /* --- PUSH NOTIFICATION --- */
         .push-notification {
-            position: fixed; top: 20px; right: 20px;
-            width: 320px;
-            background: rgba(15, 2, 5, 0.95);
-            border-left: 4px solid var(--alert);
-            border-radius: 4px; padding: 15px;
-            z-index: 1000;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(255, 0, 60, 0.2);
-            backdrop-filter: blur(15px);
-            display: flex; gap: 12px;
-            border: 1px solid rgba(255, 0, 60, 0.1);
-            border-left: 4px solid var(--alert);
-            transform: translateX(120%);
-            transition: transform 0.3s var(--ease-tech);
+            position: fixed; top: 20px; right: 20px; width: 320px; background: rgba(15, 2, 5, 0.95);
+            border-left: 4px solid var(--alert); border-radius: 4px; padding: 15px; z-index: 1100;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8); backdrop-filter: blur(15px);
+            transform: translateX(120%); transition: transform 0.3s var(--ease-tech);
         }
         .push-notification.active { transform: translateX(0); }
 
-        /* Glitch Effect */
-        .glitch-text {
-            position: relative;
-            animation: glitch 2s infinite;
-        }
-        @keyframes glitch {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); }
-            100% { transform: translate(0); }
-        }
+        .timeline-wrapper { position: relative; padding-left: 30px; border-left: 2px solid rgba(138, 43, 226, 0.3); margin-left: 20px; }
+        .timeline-wrapper::after { content: ''; position: absolute; top: 0; bottom: 0; left: -1px; width: 2px; background: linear-gradient(to bottom, transparent, var(--accent), transparent); box-shadow: 0 0 15px var(--accent); }
+        .timeline-node { position: relative; margin-bottom: 40px; }
+        .node-dot { position: absolute; left: -39px; top: 15px; width: 16px; height: 16px; background: #050505; border: 2px solid var(--accent); border-radius: 50%; z-index: 2; }
 
-        /* Skeleton Loading */
-        .skeleton {
-            background: linear-gradient(90deg, #111 25%, #222 50%, #111 75%);
-            background-size: 200% 100%;
-            animation: skeleton-load 1.5s infinite;
-        }
-        @keyframes skeleton-load {
-            from { background-position: 200% 0; }
-            to { background-position: -200% 0; }
-        }
+        /* Detail View */
+        .detail-hero { height: 40vh; width: 100%; background-size: cover; background-position: center; position: relative; mask-image: linear-gradient(to bottom, black 60%, transparent 100%); margin-bottom: -80px; }
+        .detail-content-wrapper { position: relative; z-index: 10; padding: 30px; border-radius: 24px 24px 0 0; margin: 0 10px; }
 
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
+        .modal-content { width: 90%; max-width: 450px; background: #0a0a0a; border: 1px solid var(--primary); border-radius: 16px; padding: 30px; }
+
+        .skeleton { background: linear-gradient(90deg, #111 25%, #222 50%, #111 75%); background-size: 200% 100%; animation: skeleton-load 1.5s infinite; }
+        @keyframes skeleton-load { from { background-position: 200% 0; } to { background-position: -200% 0; } }
     </style>
 </head>
 <body>
 
-<!-- STATIC GLITCH OVERLAY -->
 <div class="static-overlay" id="global-glitch"></div>
 
-<!-- BOOT LOADER -->
 <div id="boot-loader" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--font-head); pointer-events: none;">
-    <div id="boot-text" style="color:var(--primary); font-size:0.8rem; text-align:center; letter-spacing: 2px;">
-        INITIALIZING NEURAL LINK...<br>
-        <span style="color:var(--text-muted); font-size: 0.6rem;">ENCRYPTING TERMINAL...</span>
-    </div>
+    <div id="boot-text" style="color:var(--primary); font-size:0.8rem; text-align:center; letter-spacing: 2px;">SYSTEM_INITIALIZING...</div>
     <div style="width:200px; height:2px; background:#111; margin-top:20px; position:relative; overflow:hidden;">
         <div id="boot-bar" style="position:absolute; inset:0; background:var(--primary); width:0%;"></div>
     </div>
 </div>
 
-<!-- APP ROOT -->
 <div id="app">
-
-    <!-- TOP HEADER -->
     <header class="top-bar">
         <div>
-            <div class="brand">NEXUS<span>//</span>NEWS</div>
+            <div class="brand">NEXUS<span>//</span>GRID</div>
             <div style="font-size: 0.65rem; color: var(--text-muted); letter-spacing: 1px; margin-top: 4px; display: flex; align-items: center; gap: 8px;">
                 <span id="system-status" style="color: var(--success); font-weight: 700;">● SYNC: STABLE</span>
                 <span id="last-sync"></span>
             </div>
         </div>
         <button onclick="toggleFilters()" style="background:none; border:none; color:var(--primary); cursor:pointer;">
-            <span class="material-symbols-outlined">tune</span>
+            <span class="material-symbols-outlined">settings_accessibility</span>
         </button>
     </header>
 
-    <!-- GLOBAL TICKER -->
-    <div class="ticker-container" style="margin-bottom: 0; border-top: 1px solid rgba(138, 43, 226, 0.2);">
-        <div class="ticker-content" id="global-ticker">
-            <!-- Ticker items -->
-        </div>
+    <div class="ticker-container">
+        <div class="ticker-content" id="global-ticker"></div>
     </div>
 
-    <!-- VIEW: DASHBOARD (Home) -->
+    <!-- VIEW: GRID (Dashboard) -->
     <section id="dashboard" class="view-section">
+        <div class="module-header">
+            <h2 class="module-title" id="txt-grid-title">NEURAL_DASHBOARD</h2>
+            <div class="module-subtitle" id="txt-grid-subtitle">Real-time Global Surveillance</div>
+        </div>
+
         <div class="world-map-container">
             <div class="map-bg"></div>
-            <!-- Hotspots dynamically simulated -->
             <div class="hotspot" style="top: 30%; left: 25%;" onclick="loadNews(0)"></div>
-            <div class="hotspot" style="top: 45%; left: 50%; animation-delay: 0.5s;" onclick="loadNews(1)"></div>
-            <div class="hotspot" style="top: 60%; left: 75%; animation-delay: 1s;" onclick="loadNews(2)"></div>
-            <div style="position: absolute; bottom: 15px; left: 15px; font-family: var(--font-head); font-size: 0.7rem; color: var(--text-muted); letter-spacing: 1px;">
-                <span style="color:var(--success)">●</span> SYSTEM ONLINE
-            </div>
+            <div class="hotspot" style="top: 45%; left: 50%;" onclick="loadNews(1)"></div>
+            <div class="hotspot" style="top: 60%; left: 75%;" onclick="loadNews(2)"></div>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px;">
-            <!-- SYSTEM CONSOLE LOGS -->
-            <div class="glass-panel" style="border-radius: 12px; padding: 12px; height: 140px; display: flex; flex-direction: column; overflow: hidden; border-left: 3px solid var(--primary);">
-                <div style="font-family: var(--font-head); font-size: 0.6rem; color: var(--text-muted); margin-bottom: 8px; display: flex; justify-content: space-between;">
-                    <span>SYSTEM_CONSOLE // FEED</span>
-                    <span id="console-latency">LATENCY: 24ms</span>
-                </div>
-                <div id="system-console" style="flex: 1; font-family: 'Courier New', monospace; font-size: 0.65rem; color: var(--highlight); overflow-y: auto; scrollbar-width: none;">
-                    <!-- Logs injected -->
-                </div>
+            <div class="glass-panel" style="border-radius: 12px; padding: 12px; height: 140px; overflow: hidden; border-left: 3px solid var(--primary);">
+                <div style="font-family: var(--font-head); font-size: 0.6rem; color: var(--text-muted); margin-bottom: 8px;">SYSTEM_LOGS</div>
+                <div id="system-console" style="font-family: 'Courier New', monospace; font-size: 0.65rem; color: var(--highlight); overflow-y: auto; height: 100px;"></div>
             </div>
-
-            <!-- NEURAL GRID STATUS -->
             <div class="glass-panel" style="border-radius: 12px; padding: 12px; height: 140px; border-right: 3px solid var(--accent);">
-                <div style="font-family: var(--font-head); font-size: 0.6rem; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 1px;">NEURAL_GRID // STATUS</div>
-                <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <div class="stat-bar-container" style="margin: 0;">
-                        <div class="stat-label" style="font-size: 0.6rem;"><span>BANDWIDTH</span><span id="bw-val">84%</span></div>
-                        <div class="bar-track" style="height: 3px;"><div class="bar-fill" id="bw-fill" style="width: 84%;"></div></div>
-                    </div>
-                    <div class="stat-bar-container" style="margin: 0;">
-                        <div class="stat-label" style="font-size: 0.6rem;"><span>ENCRYPTION</span><span>AES-256</span></div>
-                        <div class="bar-track" style="height: 3px;"><div class="bar-fill" style="width: 100%; background: var(--success);"></div></div>
-                    </div>
-                    <div class="stat-bar-container" style="margin: 0;">
-                        <div class="stat-label" style="font-size: 0.6rem;"><span>UPLINK STABILITY</span><span id="stab-val">98.2%</span></div>
-                        <div class="bar-track" style="height: 3px;"><div class="bar-fill" id="stab-fill" style="width: 98%; background: var(--success);"></div></div>
-                    </div>
+                <div style="font-family: var(--font-head); font-size: 0.6rem; color: var(--text-muted); margin-bottom: 12px;">GRID_METRICS</div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="font-size: 0.6rem;">BW: <span id="bw-val">84%</span></div>
+                    <div style="width: 100%; height: 2px; background: #222;"><div id="bw-fill" style="width: 84%; height: 100%; background: var(--primary);"></div></div>
+                    <div style="font-size: 0.6rem;">STABILITY: <span id="stab-val">98%</span></div>
+                    <div style="width: 100%; height: 2px; background: #222;"><div id="stab-fill" style="width: 98%; height: 100%; background: var(--success);"></div></div>
                 </div>
             </div>
         </div>
 
-        <h3 class="text-neon" style="font-family: var(--font-head); margin-bottom: 20px;">LATEST TRANSMISSIONS</h3>
-        <div class="news-grid" id="news-feed">
-            <!-- News injected via JS -->
+        <h3 class="text-neon" style="font-family: var(--font-head); margin-bottom: 20px;" id="txt-latest">LATEST_SIGNALS</h3>
+        <div class="news-grid" id="news-feed"></div>
+    </section>
+
+    <!-- VIEW: TIME (Timeline) -->
+    <section id="timeline" class="view-section hidden">
+        <div class="module-header">
+            <h2 class="module-title" id="txt-time-title">TEMPORAL_ARCHIVE</h2>
+            <div class="module-subtitle" id="txt-time-subtitle">Chronological Data Stream</div>
         </div>
+        <div class="timeline-wrapper" id="timeline-container"></div>
+    </section>
+
+    <!-- VIEW: DATA (Archive) -->
+    <section id="archive" class="view-section hidden">
+        <div class="module-header">
+            <h2 class="module-title" id="txt-data-title">DATA_VAULT</h2>
+            <div class="module-subtitle" id="txt-data-subtitle">Deep Search & Filtration</div>
+        </div>
+
+        <div class="glass-panel" style="padding: 15px; border-radius: 12px; margin-bottom: 20px;">
+            <input type="text" id="archive-search" placeholder="QUERY_DATABASE..." style="width: 100%; background: none; border: 1px solid var(--primary); padding: 10px; color: white; border-radius: 4px;">
+        </div>
+
+        <div id="region-filters" style="display: flex; gap: 10px; margin-bottom: 15px; overflow-x: auto; padding-bottom: 5px;">
+            <button class="glow-badge active" onclick="setRegion('WW', this)">WORLDWIDE</button>
+            <button class="glow-badge" onclick="setRegion('DE', this)">GERMANY</button>
+        </div>
+
+        <div class="news-grid" id="archive-feed"></div>
     </section>
 
     <!-- VIEW: DETAIL -->
     <section id="detail" class="view-section hidden">
         <div class="detail-hero" id="detail-img"></div>
         <div class="glass-panel detail-content-wrapper">
-            <div class="fab-group">
-                <button id="btn-share" class="fab" onclick="shareLink()"><span class="material-symbols-outlined">share</span></button>
-            </div>
-            
-            <div class="detail-badges" id="detail-tags">
-                <!-- Tags injected -->
-            </div>
-            
-            <h1 id="detail-title" style="font-family: var(--font-head); line-height: 1.2; margin-bottom: 15px;"></h1>
-            <div class="card-meta" style="margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
+            <h1 id="detail-title" style="font-family: var(--font-head); line-height: 1.2;"></h1>
+            <div class="card-meta" style="margin: 20px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px;">
                 <span id="detail-region" class="text-neon"></span>
                 <span id="detail-date"></span>
             </div>
-            
-            <div id="detail-text" style="line-height: 1.8; color: #ddd; font-size: 1.05rem;"></div>
-            
-            <button onclick="navTo('dashboard')" class="btn-tech" style="margin-top: 30px; width: auto; padding: 10px 30px;">
-                <span class="material-symbols-outlined" style="vertical-align: middle; font-size: 18px;">arrow_back</span> RETURN
-            </button>
-            <a id="detail-link" target="_blank" class="btn-tech" style="margin-top: 30px; margin-left: 10px; width: auto; padding: 10px 30px; display: inline-flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined">open_in_new</span> ORIGINAL REPORT
-            </a>
+            <div id="detail-text" style="line-height: 1.8; color: #ddd;"></div>
+            <div style="margin-top: 30px; display: flex; gap: 10px;">
+                <button onclick="navTo('dashboard')" class="btn-tech" style="width: auto;" id="txt-back">RETURN</button>
+                <a id="detail-link" target="_blank" class="btn-tech" style="width: auto; text-decoration: none; display: flex; align-items: center;" id="txt-open">SOURCE</a>
+            </div>
         </div>
     </section>
 
-    <!-- VIEW: TIMELINE -->
-    <section id="timeline" class="view-section hidden">
-        <h2 style="font-family: var(--font-head); margin-bottom: 20px;" class="text-neon">TEMPORAL ANALYSIS</h2>
-
-        <div class="glass-panel" style="padding: 15px; border-radius: 12px; margin-bottom: 30px; border-top: 2px solid var(--accent);">
-            <div style="font-family: var(--font-head); font-size: 0.7rem; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 1px;">TEMPORAL_FLUX // DENSITY</div>
-            <div style="display: flex; align-items: flex-end; gap: 4px; height: 60px; padding-bottom: 5px;">
-                <!-- Generated Bars -->
-                <div style="flex:1; background:var(--primary); height: 40%; opacity: 0.4;"></div>
-                <div style="flex:1; background:var(--accent); height: 70%; opacity: 0.6;"></div>
-                <div style="flex:1; background:var(--primary); height: 90%; opacity: 0.8;"></div>
-                <div style="flex:1; background:var(--accent); height: 50%; opacity: 0.5;"></div>
-                <div style="flex:1; background:var(--primary); height: 30%; opacity: 0.3;"></div>
-                <div style="flex:1; background:var(--accent); height: 80%; opacity: 0.7;"></div>
-                <div style="flex:1; background:var(--primary); height: 100%; box-shadow: 0 0 10px var(--primary);"></div>
-                <div style="flex:1; background:var(--accent); height: 60%; opacity: 0.5;"></div>
-                <div style="flex:1; background:var(--primary); height: 40%; opacity: 0.4;"></div>
-                <div style="flex:1; background:var(--accent); height: 20%; opacity: 0.2;"></div>
-            </div>
-            <div style="display: flex; justify-content: space-between; font-size: 0.5rem; color: var(--text-muted); margin-top: 5px;">
-                <span>T - 24H</span>
-                <span>SIGNAL PEAK</span>
-                <span>PRESENT</span>
-            </div>
-        </div>
-
-        <div class="timeline-wrapper" id="timeline-container">
-            <!-- Timeline items injected -->
-        </div>
-    </section>
-
-
-    <!-- VIEW: ARCHIVE -->
-    <section id="archive" class="view-section hidden">
-        <h2 style="font-family: var(--font-head); margin-bottom: 20px;">NEURAL ARCHIVE</h2>
-
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <div class="glass-panel" style="flex:1; padding: 10px; border-radius: 8px; border-left: 2px solid var(--primary);">
-                <div style="font-size: 0.6rem; color: var(--text-muted);">TOTAL ENTRIES</div>
-                <div style="font-family: var(--font-head); color: var(--text-main);" id="archive-total">0</div>
-            </div>
-            <div class="glass-panel" style="flex:1; padding: 10px; border-radius: 8px; border-left: 2px solid var(--success);">
-                <div style="font-size: 0.6rem; color: var(--text-muted);">INDEX STATUS</div>
-                <div style="font-family: var(--font-head); color: var(--success);">OPTIMIZED</div>
-            </div>
-        </div>
-
-        <!-- SECTOR ANALYSIS CHARTS -->
-        <div class="glass-panel" style="padding: 15px; border-radius: 12px; margin-bottom: 20px;">
-            <div style="font-family: var(--font-head); font-size: 0.7rem; color: var(--text-muted); margin-bottom: 12px; letter-spacing: 1px;">SECTOR ANALYSIS // DATA_DISTRIBUTION</div>
-            <div id="archive-stats-viz" style="display: flex; flex-direction: column; gap: 8px;">
-                <!-- Charts injected -->
-            </div>
-        </div>
-
-        <div class="search-container">
-            <span class="material-symbols-outlined search-icon">search</span>
-            <input type="text" class="tech-input" id="archive-search" placeholder="QUERY DATABASE...">
-        </div>
-
-        <!-- REGION MATRIX -->
-        <div id="region-filters" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 5px; scrollbar-width: none;">
-            <button class="glow-badge active" onclick="filterByRegion('ALL', this)" style="cursor:pointer; white-space:nowrap;">WORLDWIDE</button>
-            <button class="glow-badge" onclick="filterByRegion('EU', this)" style="cursor:pointer; white-space:nowrap;">EUROPE_CELL</button>
-            <button class="glow-badge" onclick="filterByRegion('NA', this)" style="cursor:pointer; white-space:nowrap;">NORTH_AMERICA</button>
-            <button class="glow-badge" onclick="filterByRegion('ASIA', this)" style="cursor:pointer; white-space:nowrap;">ASIA_PACIFIC</button>
-        </div>
-
-        <!-- CATEGORY PILLS -->
-        <div id="archive-filters" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 15px; margin-bottom: 5px; scrollbar-width: none;">
-            <!-- Pills injected -->
-        </div>
-        
-        <div class="news-grid" id="archive-feed">
-            <!-- News items -->
-        </div>
-    </section>
-
-    <!-- MODAL: FILTERS -->
+    <!-- MODAL: SETTINGS -->
     <div id="filter-modal" class="modal-overlay hidden">
-        <div class="filter-content glass-panel">
-            <div class="modal-header">
-                ADVANCED FILTERS
-                <button onclick="toggleFilters()" style="background:none; border:none; color:white; cursor:pointer;"><span class="material-symbols-outlined">close</span></button>
+        <div class="modal-content glass-panel">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                <h3 id="txt-settings">SYSTEM_SETTINGS</h3>
+                <button onclick="toggleFilters()" style="background:none; border:none; color:white;"><span class="material-symbols-outlined">close</span></button>
             </div>
             
-            <label style="color: var(--text-muted); font-size: 0.8rem;">TIMEFRAME SCAN</label>
-            <input type="range" class="tech-slider" min="0" max="100">
-            
-            <label style="color: var(--text-muted); font-size: 0.8rem; display:block; margin-top: 20px;">DATA TYPE</label>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                <button class="glow-badge" style="background: var(--primary); color: white;">HOLOGRAM</button>
-                <button class="glow-badge" style="background: transparent;">TEXT</button>
+            <label id="txt-lang-label">INTERFACE_LANGUAGE</label>
+            <div style="display: flex; gap: 10px; margin: 10px 0 20px 0;">
+                <button class="glow-badge" id="btn-lang-en" onclick="setLanguage('en')">ENGLISH</button>
+                <button class="glow-badge" id="btn-lang-de" onclick="setLanguage('de')">DEUTSCH</button>
             </div>
 
-            <button class="btn-tech" onclick="toggleFilters()">INITIATE FILTER</button>
+            <label id="txt-region-label">DEFAULT_REGION</label>
+            <div style="display: flex; gap: 10px; margin: 10px 0;">
+                <button class="glow-badge" id="btn-reg-ww" onclick="setRegion('WW')">WORLDWIDE</button>
+                <button class="glow-badge" id="btn-reg-de" onclick="setRegion('DE')">GERMANY</button>
+            </div>
+
+            <button class="btn-tech" onclick="toggleFilters()" style="margin-top: 20px;" id="txt-apply">APPLY_CHANGES</button>
         </div>
     </div>
 
-
-    <!-- PUSH NOTIFICATION: BREAKING NEWS -->
+    <!-- PUSH NOTIFICATION -->
     <div id="push-notification" class="push-notification hidden">
-        <div style="color: var(--alert);"><span class="material-symbols-outlined glitch-text">warning</span></div>
+        <div style="color: var(--alert);"><span class="material-symbols-outlined">warning</span></div>
         <div style="flex: 1;">
-            <div style="font-family: var(--font-head); font-size: 0.65rem; color: var(--alert); letter-spacing: 2px; margin-bottom: 4px; font-weight: 700;">BREAKING NEWS</div>
-            <h4 id="push-title" style="margin: 0 0 8px 0; font-size: 0.9rem; line-height: 1.3;"></h4>
-            <div style="display: flex; gap: 8px;">
-                <button class="btn-tech" style="padding: 4px 12px; font-size: 0.65rem; width: auto; margin-top: 0;" onclick="loadDetail(currentBreakingId); closePush();">VIEW</button>
-                <button onclick="closePush()" style="background:none; border:none; color:var(--text-muted); font-size: 0.65rem; cursor:pointer; text-decoration: underline;">DISMISS</button>
-            </div>
+            <div style="font-family: var(--font-head); font-size: 0.65rem; color: var(--alert);" id="txt-breaking">BREAKING_NEWS</div>
+            <h4 id="push-title" style="margin: 5px 0; font-size: 0.9rem;"></h4>
+            <button class="btn-tech" style="padding: 4px 12px; font-size: 0.65rem; width: auto;" onclick="closePush()" id="txt-view">VIEW</button>
         </div>
     </div>
+</div>
 
-</div> <!-- END APP -->
-
-<!-- NAVIGATION BOTTOM DOCK -->
-<nav class="nav-dock" style="max-width: 400px;">
+<nav class="nav-dock">
     <button class="nav-item active" onclick="navTo('dashboard')" id="nav-dashboard">
         <span class="material-symbols-outlined">grid_view</span>
-        <span>GRID</span>
+        <span id="txt-nav-grid">GRID</span>
     </button>
     <button class="nav-item" onclick="navTo('timeline')" id="nav-timeline">
         <span class="material-symbols-outlined">history</span>
-        <span>TIME</span>
+        <span id="txt-nav-time">TIME</span>
     </button>
     <button class="nav-item" onclick="navTo('archive')" id="nav-archive">
         <span class="material-symbols-outlined">folder_open</span>
-        <span>DATA</span>
+        <span id="txt-nav-data">DATA</span>
     </button>
 </nav>
 
 <script>
-    /* --- CORE UI UTILS --- */
-    function escapeHTML(str) {
-        if (!str) return "";
-        return str.replace(/[&<>"']/g, m => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-        })[m]);
-    }
-
-    function typeWriter(el, text, speed = 15) {
-        if (!el) return;
-        // Cancel any existing typewriter animation on this element
-        if (el._typeTimeout) clearTimeout(el._typeTimeout);
-
-        el.textContent = '';
-        let i = 0;
-        function type() {
-            if (i < text.length) {
-                el.textContent += text.charAt(i);
-                i++;
-                el._typeTimeout = setTimeout(type, speed);
-            } else {
-                delete el._typeTimeout;
-            }
+    /* --- i18n --- */
+    const i18n = {
+        en: {
+            'grid-title': 'NEURAL_DASHBOARD', 'grid-subtitle': 'Real-time Global Surveillance',
+            'time-title': 'TEMPORAL_ARCHIVE', 'time-subtitle': 'Chronological Data Stream',
+            'data-title': 'DATA_VAULT', 'data-subtitle': 'Deep Search & Filtration',
+            'latest': 'LATEST_SIGNALS', 'back': 'RETURN', 'open': 'SOURCE',
+            'settings': 'SYSTEM_SETTINGS', 'lang-label': 'INTERFACE_LANGUAGE',
+            'region-label': 'DEFAULT_REGION', 'apply': 'APPLY_CHANGES',
+            'breaking': 'BREAKING_NEWS', 'view': 'VIEW',
+            'nav-grid': 'GRID', 'nav-time': 'TIME', 'nav-data': 'DATA'
+        },
+        de: {
+            'grid-title': 'NEURAL_DASHBOARD', 'grid-subtitle': 'Echtzeit-Globalüberwachung',
+            'time-title': 'TEMPORAL_ARCHIV', 'time-subtitle': 'Chronologischer Datenstrom',
+            'data-title': 'DATEN_TRESOR', 'data-subtitle': 'Tiefensuche & Filterung',
+            'latest': 'NEUESTE_SIGNALE', 'back': 'ZURÜCK', 'open': 'QUELLE',
+            'settings': 'SYSTEM_EINSTELLUNGEN', 'lang-label': 'OBERFLÄCHEN_SPRACHE',
+            'region-label': 'STANDARD_REGION', 'apply': 'ÄNDERUNGEN_ÜBERNEHMEN',
+            'breaking': 'EILMELDUNG', 'view': 'ANSEHEN',
+            'nav-grid': 'NETZ', 'nav-time': 'ZEIT', 'nav-data': 'DATEN'
         }
-        type();
+    };
+
+    let currentLang = localStorage.getItem('nexus_lang') || 'en';
+    let activeRegion = localStorage.getItem('nexus_region') || 'WW';
+
+    function setLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('nexus_lang', lang);
+        applyL10n();
+        glitchFlash();
     }
 
+    function applyL10n() {
+        const dict = i18n[currentLang];
+        for (const [id, val] of Object.entries(dict)) {
+            const el = document.getElementById('txt-' + id);
+            if (el) el.innerText = val;
+        }
+        document.getElementById('txt-nav-grid').innerText = dict['nav-grid'];
+        document.getElementById('txt-nav-time').innerText = dict['nav-time'];
+        document.getElementById('txt-nav-data').innerText = dict['nav-data'];
 
-    /* --- DATA STORE --- */
-    let currentBreakingId = null;
-    let currentDetailId = null;
-    let db = {
-        news: [],
-        timeline: [],
-        chats: [
-            { user: "Ghost_01", msg: "Did you see the flux?" },
-            { user: "NeonRider", msg: "Signal is clean today." },
-            { user: "SysAdmin", msg: "Monitoring bandwidth." }
-        ]
+        document.getElementById('btn-lang-en').classList.toggle('active', currentLang === 'en');
+        document.getElementById('btn-lang-de').classList.toggle('active', currentLang === 'de');
+    }
+
+    /* --- DATA FETCHING --- */
+    const RSS_FEEDS = {
+        'WW': 'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en',
+        'DE': 'https://news.google.com/rss?hl=de&gl=DE&ceid=DE:de'
     };
-
-    const FALLBACK_DATA = {
-        "World": [
-            {"title": "Neo-Tokyo Energy Crisis Averted", "source": "CyberWire", "link": "https://example.com/1"},
-            {"title": "Lunar Colony Expansion Approved", "source": "Orbital News", "link": "https://example.com/2"}
-        ],
-        "Technology": [
-            {"title": "Neural Link v4.0 Goes Open Source", "source": "TechPulse", "link": "https://example.com/3"},
-            {"title": "Quantum Encryption Breached?", "source": "BitShred", "link": "https://example.com/4"}
-        ],
-        "Business": [
-            {"title": "Arasaka Stock Rebounds After CEO Change", "source": "FinStream", "link": "https://example.com/5"}
-        ]
-    };
-
-    const API_URL = 'https://ok.surf/api/v1/cors/news-feed';
-    const CACHE_KEY = 'nexus_news_data';
-    const CACHE_TIME_KEY = 'nexus_news_timestamp';
-    const REFRESH_INTERVAL = 30 * 60 * 1000; // 30 minutes
+    const RSS_CONVERTER = 'https://api.rss2json.com/v1/api.json?rss_url=';
+    const CACHE_KEY = 'nexus_news_cache';
+    const CACHE_TIME = 'nexus_news_time';
 
     async function fetchNews() {
+        const url = RSS_CONVERTER + encodeURIComponent(RSS_FEEDS[activeRegion]);
         const now = Date.now();
-        const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
-        const cachedData = localStorage.getItem(CACHE_KEY);
+        const cachedTime = localStorage.getItem(CACHE_TIME + '_' + activeRegion);
+        const cachedData = localStorage.getItem(CACHE_KEY + '_' + activeRegion);
 
-        // Respect 30min sync interval
-        if (cachedTime && cachedData && (now - cachedTime < REFRESH_INTERVAL)) {
-            console.log("Accessing local data vault...");
-            processNewsData(JSON.parse(cachedData), true);
+        if (cachedTime && cachedData && (now - cachedTime < 30 * 60 * 1000)) {
+            processData(JSON.parse(cachedData));
             return;
         }
 
-        console.log("Syncing with Global News Grid...");
         try {
-            const response = await fetch(API_URL);
-            const data = await response.json();
-
-            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
-            localStorage.setItem(CACHE_TIME_KEY, now.toString());
-
-            processNewsData(data, false);
-        } catch (error) {
-            console.error("Link Failure. Reverting to local cache...", error);
-            const statusEl = document.getElementById('system-status');
-            if (statusEl) {
-                statusEl.innerText = "● DIAGNOSTIC_MODE";
-                statusEl.style.color = "var(--alert)";
+            const res = await fetch(url);
+            const data = await res.json();
+            if (data.status === 'ok') {
+                localStorage.setItem(CACHE_KEY + '_' + activeRegion, JSON.stringify(data.items));
+                localStorage.setItem(CACHE_TIME + '_' + activeRegion, now.toString());
+                processData(data.items);
             }
-            if (cachedData) {
-                processNewsData(JSON.parse(cachedData), true);
-            } else {
-                processNewsData(FALLBACK_DATA, true);
-            }
+        } catch (e) {
+            console.error(e);
+            if (cachedData) processData(JSON.parse(cachedData));
         }
     }
 
-    function processNewsData(data, isCached = false) {
-        let flattenedNews = [];
-        const categoryMap = {
-            'World': 'GLOBAL',
-            'Business': 'FINANCE',
-            'Technology': 'TECH',
-            'Science': 'SCIENCE',
-            'Health': 'BIO',
-            'Entertainment': 'MEDIA',
-            'Sports': 'ARENA'
-        };
-
-        // Aggregate across all sectors to find the top reports
-        const regions = ['EU', 'NA', 'ASIA'];
-        for (const [cat, items] of Object.entries(data)) {
-            items.forEach(item => {
-                flattenedNews.push({
-                    title: item.title,
-                    region: item.source,
-                    geo: regions[Math.floor(Math.random() * regions.length)],
-                    date: new Date().toLocaleDateString(),
-                    cat: categoryMap[cat] || cat.toUpperCase(),
-                    img: item.og || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
-                    content: `Data harvested from ${item.source}. Critical report on ${cat} developments. Accessing full neural link...`,
-                    link: item.link
-                });
-            });
-        }
-
-        // Ensure exactly Top 30 as requested
-        const top30 = flattenedNews.slice(0, 30).map((n, i) => ({
-            ...n,
+    let dbNews = [];
+    function processData(items) {
+        dbNews = items.slice(0, 30).map((item, i) => ({
             id: i,
-            sector_id: Math.random().toString(16).slice(2, 6).toUpperCase(),
-            signature: btoa(unescape(encodeURIComponent(n.title))).slice(0, 12)
+            title: item.title,
+            region: item.author || activeRegion,
+            date: new Date(item.pubDate).toLocaleDateString(),
+            cat: 'SIGNAL',
+            img: item.enclosure?.link || item.thumbnail || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
+            content: item.description || item.content,
+            link: item.link,
+            signature: Math.random().toString(16).slice(2, 8).toUpperCase()
         }));
+        renderAll();
+        document.getElementById('last-sync').innerText = "| " + new Date().toLocaleTimeString();
+    }
 
-        // Check for updates to trigger breaking news (only on fresh fetches)
-        const lastHeadline = localStorage.getItem('nexus_last_headline');
-        if (top30.length > 0 && top30[0].title !== lastHeadline) {
-            if (lastHeadline && !isCached) triggerBreakingNews(top30[0]);
-            localStorage.setItem('nexus_last_headline', top30[0].title);
+    function setRegion(reg, btn) {
+        activeRegion = reg;
+        localStorage.setItem('nexus_region', reg);
+        if (btn) {
+            document.querySelectorAll('#region-filters .glow-badge').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
         }
+        document.getElementById('btn-reg-ww').classList.toggle('active', activeRegion === 'WW');
+        document.getElementById('btn-reg-de').classList.toggle('active', activeRegion === 'DE');
+        fetchNews();
+        glitchFlash();
+    }
 
-        db.news = top30;
-
-        // Generate Chronology
-        db.timeline = db.news.slice(0, 15).map((n, index) => ({
-            time: `${Math.floor(23 - (index * 1.5))}:00`,
-            title: n.title,
-            desc: `Temporal marker [${n.sector_id}]. Signal origin: ${n.geo}. Data integrity: ${(98 + Math.random() * 1.9).toFixed(2)}%`
-        }));
-
-        renderNews();
+    /* --- UI RENDERING --- */
+    function renderAll() {
+        renderFeed('news-feed', dbNews);
+        renderFeed('archive-feed', dbNews);
         renderTimeline();
-        renderArchiveStats();
-
-        // Populate Tickers
-        const tickers = ['global-ticker'];
-        tickers.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                el.innerHTML = db.news.map(n => `<span class="ticker-item">${escapeHTML(n.cat)} // ${escapeHTML(n.title)}</span>`).join('');
-            }
-        });
-
-        const syncEl = document.getElementById('last-sync');
-        if (syncEl) {
-            syncEl.innerText = "| LAST SYNC: " + new Date().toLocaleTimeString();
-        }
+        document.getElementById('global-ticker').innerHTML = dbNews.map(n => `<span class="ticker-item">${n.title}</span>`).join('');
     }
 
-    function renderArchiveStats() {
-        const viz = document.getElementById('archive-stats-viz');
-        const filters = document.getElementById('archive-filters');
-        if (!viz || !filters) return;
-
-        const counts = {};
-        db.news.forEach(n => counts[n.cat] = (counts[n.cat] || 0) + 1);
-
-        const categories = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
-        const max = Math.max(...Object.values(counts));
-
-        // Render Charts
-        viz.innerHTML = categories.map(cat => {
-            const percent = (counts[cat] / max) * 100;
-            return `
-                <div class="stat-bar-container" style="margin-bottom: 8px;">
-                    <div class="stat-label" style="margin-bottom: 2px;">
-                        <span>${cat}</span>
-                        <span style="color:var(--primary)">${counts[cat]} REPORTS</span>
-                    </div>
-                    <div class="bar-track" style="height: 4px; background: rgba(255,255,255,0.05);">
-                        <div class="bar-fill" style="width: ${percent}%; height: 100%; transition: width 1.5s var(--ease-tech);"></div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        // Render Filter Pills
-        filters.innerHTML = `<button class="glow-badge active" onclick="filterArchive('ALL', this)" style="cursor:pointer; white-space:nowrap;">ALL_SECTORS</button>` +
-            categories.map(cat => `
-                <button class="glow-badge" onclick="filterArchive('${cat}', this)" style="cursor:pointer; white-space:nowrap;">${cat}</button>
-            `).join('');
-    }
-
-    let activeFilter = 'ALL';
-    let activeRegion = 'ALL';
-
-    function filterByRegion(region, btn) {
-        activeRegion = region;
-
-        document.querySelectorAll('#region-filters .glow-badge').forEach(b => {
-            b.classList.remove('active');
-            b.style.background = 'rgba(138, 43, 226, 0.15)';
-            b.style.color = 'var(--highlight)';
-        });
-        btn.classList.add('active');
-        btn.style.background = 'var(--primary)';
-        btn.style.color = 'white';
-
-        applyArchiveFilters();
-    }
-
-    function filterArchive(cat, btn) {
-        activeFilter = cat;
-
-        // Update UI
-        document.querySelectorAll('#archive-filters .glow-badge').forEach(b => {
-            b.classList.remove('active');
-            b.style.background = 'rgba(138, 43, 226, 0.15)';
-            b.style.color = 'var(--highlight)';
-        });
-        btn.classList.add('active');
-        btn.style.background = 'var(--primary)';
-        btn.style.color = 'white';
-
-        applyArchiveFilters();
-    }
-
-    function applyArchiveFilters() {
-        const term = document.getElementById('archive-search').value.toLowerCase();
-        const filtered = db.news.filter(n => {
-            const matchesSearch = n.title.toLowerCase().includes(term) || n.region.toLowerCase().includes(term);
-            const matchesCat = activeFilter === 'ALL' || n.cat === activeFilter;
-            const matchesRegion = activeRegion === 'ALL' || n.geo === activeRegion;
-            return matchesSearch && matchesCat && matchesRegion;
-        });
-
-        const container = document.getElementById('archive-feed');
-        renderNewsGrid(container, filtered);
-    }
-
-    function renderNewsGrid(container, items) {
-        if (!container) return;
-        container.innerHTML = items.map(item => `
-            <div class="glass-panel news-card" onclick="loadDetail(${item.id})">
-                <img src="${item.img}" class="news-thumb" onerror="this.src='https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80'">
+    function renderFeed(id, items) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.innerHTML = items.map(n => `
+            <div class="glass-panel news-card" onclick="loadDetail(${n.id})">
+                <img src="${n.img}" class="news-thumb">
                 <div class="card-body">
-                    <span class="card-cat">${escapeHTML(item.cat)} // ${escapeHTML(item.geo)} // SEC-${escapeHTML(item.sector_id)}</span>
-                    <h4 class="card-title">${escapeHTML(item.title)}</h4>
-                    <div class="card-meta">
-                        <span>${escapeHTML(item.region)} // SIG:${escapeHTML(item.signature)}</span>
-                        <span>${escapeHTML(item.date)}</span>
-                    </div>
+                    <span class="card-cat">${n.region} // SIG:${n.signature}</span>
+                    <h4 class="card-title">${n.title}</h4>
+                    <div class="card-meta"><span>${n.date}</span></div>
                 </div>
             </div>`).join('');
-
-        gsap.from(container.querySelectorAll('.news-card'), {
-            opacity: 0, y: 10, duration: 0.2, stagger: 0.03, ease: "power2.out"
-        });
     }
 
-    function triggerBreakingNews(item) {
-        currentBreakingId = item.id;
-        const push = document.getElementById('push-notification');
-        if (!push) return;
-
-        addSystemLog("CRIT", "UPLINK_ALERT", "INTERCEPTING_PRIORITY_SIGNAL");
-        document.getElementById('push-title').innerText = item.title;
-        push.classList.remove('hidden');
-
-        requestAnimationFrame(() => {
-            push.classList.add('active');
-            // Auto-hide after 10 seconds
-            setTimeout(closePush, 10000);
-        });
-
-        // Snappy GSAP pop
-        gsap.fromTo(push, { x: "120%", skewX: 20 }, { x: "0%", skewX: 0, duration: 0.2, ease: "power4.out" });
-    }
-
-    /* --- CORE FUNCTIONS --- */
-
-    // Navigation Logic with GSAP (Snappy Transitions)
-    function navTo(viewId) {
-        const currentView = document.querySelector('.view-section:not(.hidden)');
-        const targetView = document.getElementById(viewId);
-
-        if (currentView === targetView) return;
-
-        // Animate Out
-        if (currentView) {
-            gsap.to(currentView, {
-                opacity: 0,
-                y: -10,
-                filter: "brightness(2) contrast(2)",
-                duration: 0.1,
-                ease: "power4.in",
-                onComplete: () => {
-                    currentView.classList.add('hidden');
-                    showTarget();
-                }
-            });
-        } else {
-            showTarget();
-        }
-
-        function showTarget() {
-            targetView.classList.remove('hidden');
-
-            // Glitch Flash
-            const glitch = document.getElementById('global-glitch');
-            if (glitch) {
-                gsap.fromTo(glitch, { opacity: 0.3 }, { opacity: 0, duration: 0.15 });
-            }
-
-            // Snappy Neural Handshake Transition
-            const tl = gsap.timeline();
-            tl.fromTo(targetView,
-                { opacity: 0, x: 20, skewX: 10, filter: "brightness(3) contrast(2)" },
-                { opacity: 1, x: 0, skewX: 0, filter: "brightness(1) contrast(1)", duration: 0.1, ease: "power4.out" }
-            );
-
-            // Ripple effect on active nav item
-            const activeNav = document.getElementById('nav-' + viewId);
-            if (activeNav) {
-                gsap.fromTo(activeNav,
-                    { boxShadow: "0 0 0px var(--primary)" },
-                    { boxShadow: "0 0 30px var(--accent)", duration: 0.2, yoyo: true, repeat: 1 }
-                );
-            }
-        }
-
-        // Update Dock
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        const navBtn = document.getElementById('nav-' + viewId);
-        if(navBtn) {
-            navBtn.classList.add('active');
-            gsap.from(navBtn.querySelector('.material-symbols-outlined'), { scale: 0.5, duration: 0.2, ease: "back.out(2)" });
-        }
-
-        addSystemLog("INFO", "NAV_UPLINK", `ACCESSING_${viewId.toUpperCase()}_SECTION`);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    // System Console Logic
-    function addSystemLog(lvl, sensor, action) {
-        const consoleEl = document.getElementById('system-console');
-        if (!consoleEl) return;
-
-        const ts = new Date().toLocaleTimeString();
-        const val = Math.floor(Math.random() * 899) + 100;
-
-        const div = document.createElement('div');
-        div.style.marginBottom = "2px";
-        div.style.opacity = "0";
-        div.innerHTML = `<span style="color:var(--text-muted)">[${ts}]</span> <span style="color:${lvl === 'CRIT' ? 'var(--alert)' : 'var(--primary)'}">${lvl}::${sensor}</span> >> ${action} ${val ? `(v${val})` : ''}`;
-
-        consoleEl.appendChild(div);
-        gsap.fromTo(div,
-            { opacity: 0, x: -5, scaleX: 1.2 },
-            { opacity: 1, x: 0, scaleX: 1, duration: 0.15, ease: "power4.out" }
-        );
-
-        if (consoleEl.children.length > 25) consoleEl.removeChild(consoleEl.firstChild);
-        consoleEl.scrollTop = consoleEl.scrollHeight;
-
-        const latEl = document.getElementById('console-latency');
-        if (latEl) latEl.innerText = `LATENCY: ${Math.floor(Math.random() * 40) + 10}ms`;
-    }
-
-    function updateConsoleLogs() {
-        const LOG_LEVELS = ["INFO", "DEBUG", "WARN", "SYNC"];
-        const SENSORS = ["NEURAL_LINK", "QUANTUM_RELAY", "GRID_ANALYZER", "CORE_BUFFER", "SCRAPER_BOT_7"];
-        const ACTIONS = ["CONNECTED", "DISCONNECTED", "PACKET_LOSS", "LATENCY_SPIKE", "ENCRYPTION_ACTIVE", "DATA_HARVESTED", "REDUNDANCY_CHECK", "BYPASS_ATTEMPT"];
-
-        // Initial logs
-        for(let i=0; i<8; i++) {
-            addSystemLog(LOG_LEVELS[i%4], SENSORS[i%5], ACTIONS[i%8]);
-        }
-
-        // Accelerated Loop for "Snappy" feel
-        setInterval(() => {
-            addSystemLog(
-                LOG_LEVELS[Math.floor(Math.random() * LOG_LEVELS.length)],
-                SENSORS[Math.floor(Math.random() * SENSORS.length)],
-                ACTIONS[Math.floor(Math.random() * ACTIONS.length)]
-            );
-        }, 800);
-    }
-
-    // Micro-interactions
-    function initInteractions() {
-        // Hotspot Neural Pulse
-        document.querySelectorAll('.hotspot').forEach(hs => {
-            hs.addEventListener('mouseenter', () => {
-                gsap.to(hs, { boxShadow: "0 0 30px var(--primary)", duration: 0.1 });
-            });
-            hs.addEventListener('mouseleave', () => {
-                gsap.to(hs, { boxShadow: "0 0 10px var(--accent)", duration: 0.2 });
-            });
-        });
-
-        // News Card Glitch Hover
-        document.addEventListener('mouseover', (e) => {
-            const card = e.target.closest('.news-card, .nav-item');
-            if (card) {
-                gsap.to(card, { y: -3, duration: 0.1, ease: "power4.out" });
-                // Random Glitch Pop
-                if (Math.random() > 0.5) {
-                    gsap.fromTo(card, { skewX: 5 }, { skewX: 0, duration: 0.05, repeat: 1, yoyo: true });
-                }
-            }
-        });
-        document.addEventListener('mouseout', (e) => {
-            const card = e.target.closest('.news-card, .nav-item');
-            if (card) {
-                gsap.to(card, { y: 0, duration: 0.15, ease: "power4.in" });
-            }
-        });
-
-        // Snappy Button Hover
-        document.addEventListener('mouseenter', (e) => {
-            if (e.target.classList && (e.target.classList.contains('btn-tech') || e.target.classList.contains('fab'))) {
-                gsap.to(e.target, { scale: 1.05, boxShadow: "0 0 20px var(--primary)", duration: 0.2 });
-            }
-        }, true);
-        document.addEventListener('mouseleave', (e) => {
-            if (e.target.classList && (e.target.classList.contains('btn-tech') || e.target.classList.contains('fab'))) {
-                gsap.to(e.target, { scale: 1, boxShadow: "none", duration: 0.2 });
-            }
-        }, true);
-    }
-
-    // Load News to Dashboard
-    function renderNews() {
-        const container = document.getElementById('news-feed');
-        const archive = document.getElementById('archive-feed');
-        if (!container) return;
-
-        let html = '';
-        if (db.news.length === 0) {
-            html = '<div class="skeleton" style="height: 200px; width: 100%; border-radius: 12px;"></div>'.repeat(3);
-        } else {
-            db.news.forEach(item => {
-                html += `
-                <div class="glass-panel news-card" onclick="loadDetail(${item.id})">
-                    <img src="${item.img}" class="news-thumb" onerror="this.src='https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80'">
-                    <div class="card-body">
-                        <span class="card-cat">${escapeHTML(item.cat)} // ${escapeHTML(item.geo)} // SEC-${escapeHTML(item.sector_id)}</span>
-                        <h4 class="card-title">${escapeHTML(item.title)}</h4>
-                        <div class="card-meta">
-                            <span>${escapeHTML(item.region)} // SIG:${escapeHTML(item.signature)}</span>
-                            <span>${escapeHTML(item.date)}</span>
-                        </div>
-                    </div>
-                </div>`;
-            });
-        }
-        
-        container.innerHTML = html;
-        if (archive) {
-            archive.innerHTML = html;
-            const totalEl = document.getElementById('archive-total');
-            if (totalEl) totalEl.innerText = db.news.length;
-        }
-
-        // Animate entrance (Snappy Stagger)
-        gsap.from(".news-card", {
-            y: 20,
-            opacity: 0,
-            duration: 0.3,
-            stagger: 0.05,
-            ease: "power2.out"
-        });
-    }
-
-    // Load Detail View
-    function loadDetail(id) {
-        currentDetailId = id;
-        const item = db.news.find(i => i.id === id);
-        if (!item) return;
-
-        
-        document.getElementById('detail-img').style.backgroundImage = `url(${item.img})`;
-        typeWriter(document.getElementById('detail-title'), item.title, 20);
-        document.getElementById('detail-region').innerText = item.region;
-        document.getElementById('detail-date').innerText = item.date;
-        document.getElementById('detail-text').innerText = item.content + " Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.";
-        
-        const linkBtn = document.getElementById('detail-link');
-        if (linkBtn) linkBtn.href = item.link || '#';
-
-        const tags = document.getElementById('detail-tags');
-        tags.innerHTML = `<span class="glow-badge">${item.cat}</span><span class="glow-badge" style="border-color:white; color:white;">VERIFIED</span>`;
-        
-        navTo('detail');
-
-        // Snappy Glitch Entrance
-        const content = document.querySelector('.detail-content-wrapper');
-        if (content) {
-            const tl = gsap.timeline();
-            tl.to(content, { x: 10, opacity: 0.5, duration: 0.04 })
-              .to(content, { x: -10, opacity: 0.8, duration: 0.04 })
-              .to(content, { x: 5, opacity: 0.3, duration: 0.04 })
-              .to(content, { x: 0, opacity: 1, duration: 0.08 });
-        }
-    }
-    
-    // Wrapper for hotspot clicks
-    function loadNews(index) {
-        // Find news in 'GLOBAL' category for hotspots
-        const globalNews = db.news.filter(n => n.cat === 'GLOBAL');
-        if (globalNews.length > index) {
-            loadDetail(globalNews[index].id);
-        } else if (db.news.length > index) {
-            loadDetail(db.news[index].id);
-        }
-    }
-
-    // Render Timeline
     function renderTimeline() {
-        const container = document.getElementById('timeline-container');
-        if (!container) return;
-        container.innerHTML = '';
-        db.timeline.forEach(item => {
-            container.innerHTML += `
+        const el = document.getElementById('timeline-container');
+        if (!el) return;
+        el.innerHTML = dbNews.slice(0, 15).map(n => `
             <div class="glass-panel timeline-node" style="padding: 15px; border-radius: 8px;">
                 <div class="node-dot"></div>
-                <div class="time-label">${escapeHTML(item.time)}</div>
-                <h4 style="margin: 0 0 5px 0;">${escapeHTML(item.title)}</h4>
-                <p style="margin:0; font-size: 0.85rem; color: #aaa;">${escapeHTML(item.desc)}</p>
-            </div>`;
-        });
+                <div style="color: var(--primary); font-size: 0.8rem; margin-bottom: 5px;">${n.date}</div>
+                <h4 style="margin:0;">${n.title}</h4>
+            </div>`).join('');
     }
 
-
-    function shareLink() {
-        const item = db.news.find(n => n.id === currentDetailId);
-        if (!item) return;
-
-        const dummy = document.createElement('input');
-        document.body.appendChild(dummy);
-        dummy.value = item.link || window.location.href;
-        dummy.select();
-        document.execCommand('copy');
-        document.body.removeChild(dummy);
-
-        const btn = document.getElementById('btn-share');
-        const originalIcon = btn.innerHTML;
-        btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;">done</span>';
-        btn.style.background = 'var(--success)';
-
-        setTimeout(() => {
-            btn.innerHTML = originalIcon;
-            btn.style.background = '#000';
-        }, 2000);
-
-        // Show notification
-        const status = document.getElementById('system-status');
-        const originalStatus = status.innerText;
-        status.innerText = "● LINK_COPIED";
-        status.style.color = "var(--primary)";
-        setTimeout(() => {
-            status.innerText = originalStatus;
-            status.style.color = "var(--success)";
-        }, 3000);
+    function loadDetail(id) {
+        const n = dbNews.find(x => x.id === id);
+        if (!n) return;
+        document.getElementById('detail-img').style.backgroundImage = `url(${n.img})`;
+        document.getElementById('detail-title').innerText = n.title;
+        document.getElementById('detail-region').innerText = n.region;
+        document.getElementById('detail-date').innerText = n.date;
+        document.getElementById('detail-text').innerHTML = n.content;
+        document.getElementById('detail-link').href = n.link;
+        navTo('detail');
     }
 
-    // Filters
-    function toggleFilters() {
-        const modal = document.getElementById('filter-modal');
-        modal.classList.toggle('hidden');
-    }
+    /* --- NAVIGATION & ANIMATION --- */
+    function navTo(viewId) {
+        const current = document.querySelector('.view-section:not(.hidden)');
+        const target = document.getElementById(viewId);
+        if (current === target) return;
 
-    // Breaking News Push Logic
-    function closePush() {
-        const push = document.getElementById('push-notification');
-        push.classList.remove('active');
-        setTimeout(() => push.classList.add('hidden'), 300);
-    }
-
-
-
-    // Archive Search
-    function initSearch() {
-        const input = document.getElementById('archive-search');
-        if (!input) return;
-        input.addEventListener('input', () => applyArchiveFilters());
-    }
-
-    /* --- INITIALIZATION --- */
-    // Neural Grid Dynamic Updates
-    function updateNeuralGrid() {
-        setInterval(() => {
-            const bw = Math.floor(Math.random() * 30) + 60;
-            const stab = (95 + Math.random() * 4.9).toFixed(1);
-
-            const bwFill = document.getElementById('bw-fill');
-            const bwVal = document.getElementById('bw-val');
-            const stabFill = document.getElementById('stab-fill');
-            const stabVal = document.getElementById('stab-val');
-
-            if (bwFill) bwFill.style.width = bw + '%';
-            if (bwVal) bwVal.innerText = bw + '%';
-            if (stabFill) stabFill.style.width = stab + '%';
-            if (stabVal) stabVal.innerText = stab + '%';
-        }, 3000);
-    }
-
-    window.addEventListener('DOMContentLoaded', async () => {
-        // Boot Sequence
-        const bootBar = document.getElementById('boot-bar');
-        const bootLoader = document.getElementById('boot-loader');
-        const bootText = document.getElementById('boot-text');
-
-        const bootTl = gsap.timeline();
-        bootTl.to(bootBar, { width: "100%", duration: 0.8, ease: "power4.inOut" })
-              .add(() => {
-                  if (bootText) {
-                      typeWriter(bootText, "LINK ESTABLISHED. NEURAL SYNC COMPLETE.");
-                      bootText.style.color = "var(--success)";
-                  }
-                  gsap.to(bootBar, { backgroundColor: "var(--success)", duration: 0.1 });
-              });
-
-        try {
-            await fetchNews();
-        } catch (e) {
-            console.error("INITIAL_SYNC_FAILURE:", e);
+        if (current) {
+            gsap.to(current, { opacity: 0, y: -10, duration: 0.1, onComplete: () => {
+                current.classList.add('hidden');
+                target.classList.remove('hidden');
+                gsap.fromTo(target, { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.1 });
+            }});
+        } else {
+            target.classList.remove('hidden');
         }
 
-        // Reveal App even if sync fails
-        bootTl.to(bootLoader, { opacity: 0, duration: 0.4, delay: 0.3, onComplete: () => bootLoader.remove() });
-        initSearch();
-        initInteractions();
-        updateConsoleLogs();
-        updateNeuralGrid();
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        const navBtn = document.getElementById('nav-' + viewId);
+        if (navBtn) navBtn.classList.add('active');
+        glitchFlash();
+        window.scrollTo(0, 0);
+    }
 
-        // 30-minute auto-refresh check
+    function glitchFlash() {
+        const g = document.getElementById('global-glitch');
+        gsap.fromTo(g, { opacity: 0.5 }, { opacity: 0, duration: 0.1 });
+    }
+
+    function toggleFilters() {
+        document.getElementById('filter-modal').classList.toggle('hidden');
+    }
+
+    function closePush() {
+        document.getElementById('push-notification').classList.remove('active');
+    }
+
+    /* --- INIT --- */
+    window.addEventListener('DOMContentLoaded', () => {
+        applyL10n();
+        setRegion(activeRegion); // This calls fetchNews
+
+        const bootBar = document.getElementById('boot-bar');
+        const bootLoader = document.getElementById('boot-loader');
+        gsap.to(bootBar, { width: "100%", duration: 0.5, onComplete: () => {
+            gsap.to(bootLoader, { opacity: 0, duration: 0.2, onComplete: () => bootLoader.remove() });
+        }});
+
+        // Simulated Logs
+        const consoleEl = document.getElementById('system-console');
         setInterval(() => {
-            fetchNews();
-        }, 60000); // Check every minute, fetchNews handles the 30min logic
-        
-        // Trigger Initial Breaking News after 5s
-        setTimeout(() => {
-            if (db.news.length > 0) {
-                triggerBreakingNews(db.news[0]);
-            }
-        }, 5000);
+            const div = document.createElement('div');
+            div.innerText = `[${new Date().toLocaleTimeString()}] UPLINK_CHECK_${Math.floor(Math.random()*999)}... OK`;
+            consoleEl.appendChild(div);
+            if (consoleEl.children.length > 10) consoleEl.removeChild(consoleEl.firstChild);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }, 2000);
     });
-
 </script>
 </body>
 </html>
