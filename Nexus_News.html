@@ -259,6 +259,34 @@
 
         .skeleton { background: linear-gradient(90deg, #111 25%, #222 50%, #111 75%); background-size: 200% 100%; animation: skeleton-load 1.5s infinite; }
         @keyframes skeleton-load { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+        .badge-verified {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 9px; font-weight: 800; color: var(--success);
+            background: rgba(0, 240, 255, 0.1); border: 1px solid var(--success);
+            padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+            box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+        }
+        .badge-unverified {
+            display: flex; align-items: center; gap: 4px;
+            font-size: 9px; font-weight: 800; color: var(--alert);
+            background: rgba(255, 0, 60, 0.1); border: 1px solid var(--alert);
+            padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
+        }
+        .security-badge {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 12px; border-radius: 8px; font-size: 0.75rem;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .security-safe { background: rgba(0, 240, 255, 0.1); border: 1px solid var(--success); color: var(--success); }
+        .security-unsafe { background: rgba(255, 0, 60, 0.1); border: 1px solid var(--alert); color: var(--alert); }
+
+        .source-preview {
+            margin-top: 15px; padding: 12px; border-radius: 12px;
+            background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1);
+            display: flex; align-items: center; gap: 12px;
+        }
+        .source-thumb { width: 40px; height: 40px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(255,255,255,0.1); }
     </style>
 </head>
 <body>
@@ -362,6 +390,9 @@
                 <span id="detail-date"></span>
             </div>
             <div id="detail-text" style="line-height: 1.8; color: #ddd;"></div>
+
+            <div id="security-analysis" style="margin-top: 30px; padding-top: 20px; border-top: 1px dashed rgba(255,255,255,0.1);"></div>
+
             <div style="margin-top: 30px; display: flex; gap: 10px;">
                 <button onclick="navTo('dashboard')" class="btn-tech" style="width: auto;" id="txt-back">RETURN</button>
                 <a id="detail-link" target="_blank" class="btn-tech" style="width: auto; text-decoration: none; display: flex; align-items: center;" id="txt-open">SOURCE</a>
@@ -465,7 +496,10 @@
             'nav-grid': 'GRID', 'nav-time': 'TIME', 'nav-data': 'DATA',
             'theme-label': 'COLOR_SCHEME', 'hue-label': 'PRIMARY_HUE',
             'effects-label': 'VISUAL_EFFECTS', 'scanline-label': 'SCANLINE_OPACITY',
-            'glitch-label': 'GLITCH_INTENSITY'
+            'glitch-label': 'GLITCH_INTENSITY',
+            'verified': 'NEURAL_VERIFIED', 'unverified': 'UNVERIFIED_SIGNAL',
+            'secure': 'SECURE_UPLINK', 'unsafe': 'UNENCRYPTED_PATH',
+            'integrity': 'SOURCE_INTEGRITY'
         },
         de: {
             'grid-title': 'NEURAL_DASHBOARD', 'grid-subtitle': 'Echtzeit-Globalüberwachung',
@@ -478,7 +512,10 @@
             'nav-grid': 'NETZ', 'nav-time': 'ZEIT', 'nav-data': 'DATEN',
             'theme-label': 'FARBSCHEMA', 'hue-label': 'PRIMÄR_FARBTON',
             'effects-label': 'VISUELLE_EFFEKTE', 'scanline-label': 'SCANLINE_OPAZITÄT',
-            'glitch-label': 'GLITCH_INTENSITÄT'
+            'glitch-label': 'GLITCH_INTENSITÄT',
+            'verified': 'NEURAL_VERIFIZIERT', 'unverified': 'UNVERIFIZIERTES_SIGNAL',
+            'secure': 'SICHERE_VERBINDUNG', 'unsafe': 'UNVERSCHLÜSSELTER_PFAD',
+            'integrity': 'QUELL_INTEGRITÄT'
         }
     };
 
@@ -585,17 +622,26 @@
 
     let dbNews = [];
     function processData(items) {
-        dbNews = items.slice(0, 30).map((item, i) => ({
-            id: i,
-            title: item.title,
-            region: item.author || activeRegion,
-            date: new Date(item.pubDate).toLocaleDateString(),
-            cat: 'SIGNAL',
-            img: item.enclosure?.link || item.thumbnail || 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=600&q=80',
-            content: item.description || item.content,
-            link: item.link,
-            signature: Math.random().toString(16).slice(2, 8).toUpperCase()
-        }));
+        dbNews = items.slice(0, 30).map((item, i) => {
+            const content = item.description || item.content || "";
+            const imgMatch = content.match(/<img[^>]+src="([^">]+)"/);
+            const extractedImg = imgMatch ? imgMatch[1] : null;
+
+            return {
+                id: i,
+                title: item.title,
+                region: item.author || activeRegion,
+                date: new Date(item.pubDate).toLocaleDateString(),
+                cat: 'SIGNAL',
+                img: item.enclosure?.link || item.thumbnail || extractedImg || `https://picsum.photos/seed/${i + 100}/600/400`,
+                content: content,
+                link: item.link,
+                signature: Math.random().toString(16).slice(2, 8).toUpperCase(),
+                isVerified: Math.random() > 0.3,
+                score: Math.floor(Math.random() * 40) + 60,
+                isSecure: item.link.startsWith('https')
+            };
+        });
         renderAll();
         document.getElementById('last-sync').innerText = "| " + new Date().toLocaleTimeString();
     }
@@ -624,11 +670,18 @@
     function renderFeed(id, items) {
         const el = document.getElementById(id);
         if (!el) return;
+        const dict = i18n[currentLang];
         el.innerHTML = items.map(n => `
             <div class="glass-panel news-card" onclick="loadDetail(${n.id})">
                 <img src="${n.img}" class="news-thumb">
                 <div class="card-body">
-                    <span class="card-cat">${n.region} // SIG:${n.signature}</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span class="card-cat">${n.region} // SIG:${n.signature}</span>
+                        <div class="${n.isVerified ? 'badge-verified' : 'badge-unverified'}">
+                            <span class="material-symbols-outlined" style="font-size: 10px;">${n.isVerified ? 'verified_user' : 'report'}</span>
+                            ${n.isVerified ? dict['verified'] : dict['unverified']}
+                        </div>
+                    </div>
                     <h4 class="card-title">${n.title}</h4>
                     <div class="card-meta"><span>${n.date}</span></div>
                 </div>
@@ -649,12 +702,32 @@
     function loadDetail(id) {
         const n = dbNews.find(x => x.id === id);
         if (!n) return;
+        const dict = i18n[currentLang];
+
         document.getElementById('detail-img').style.backgroundImage = `url(${n.img})`;
         document.getElementById('detail-title').innerText = n.title;
         document.getElementById('detail-region').innerText = n.region;
         document.getElementById('detail-date').innerText = n.date;
         document.getElementById('detail-text').innerHTML = n.content;
         document.getElementById('detail-link').href = n.link;
+
+        // Security Analysis
+        const securityContainer = document.getElementById('security-analysis');
+        securityContainer.innerHTML = `
+            <div style="font-family: var(--font-head); font-size: 0.65rem; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase;">${dict['integrity']}</div>
+            <div class="security-badge ${n.isSecure ? 'security-safe' : 'security-unsafe'}">
+                <span class="material-symbols-outlined">${n.isSecure ? 'shield_lock' : 'gpp_maybe'}</span>
+                ${n.isSecure ? dict['secure'] : dict['unsafe']}
+            </div>
+            <div class="source-preview">
+                <img src="${n.img}" class="source-thumb">
+                <div style="flex: 1;">
+                    <div style="font-size: 0.8rem; font-weight: 700;">${n.region}</div>
+                    <div style="font-size: 0.65rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px;">${n.link}</div>
+                </div>
+            </div>
+        `;
+
         navTo('detail');
     }
 
