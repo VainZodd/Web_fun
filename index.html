@@ -68,8 +68,6 @@
 
         .hidden { display: none !important; }
         .flex-center { display: flex; justify-content: center; align-items: center; }
-        .text-neon { text-shadow: 0 0 8px var(--primary); color: var(--highlight); }
-        .text-alert { text-shadow: 0 0 8px var(--alert); color: var(--alert); }
 
         .glass-panel {
             background: var(--glass-bg);
@@ -89,7 +87,7 @@
         @keyframes scanline { 0% { transform: translateY(-100vh); } 100% { transform: translateY(100vh); } }
 
         @keyframes boot-fade { 0% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
-        #boot-loader.auto-hide { animation: boot-fade 0.5s forwards 5s; }
+        #boot-loader.auto-hide { animation: boot-fade 0.5s forwards; }
 
         .static-overlay {
             position: fixed; inset: 0;
@@ -252,8 +250,6 @@
         }
         .modal-content { width: 90%; max-width: 400px; padding: 25px; border-radius: 12px; }
 
-        .glitch-text:hover { color: var(--accent); }
-
         #network-canvas { position: fixed; inset: 0; pointer-events: none; opacity: 0.3; z-index: 1; }
 
         @media (max-width: 640px) {
@@ -282,7 +278,7 @@
 <div class="scanline-effect"></div>
 <div class="static-overlay" id="global-glitch"></div>
 
-<div id="boot-loader" class="auto-hide" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--font-head); overflow:hidden;">
+<div id="boot-loader" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--font-head); overflow:hidden;">
     <div id="boot-status" style="color:var(--primary); font-size:0.7rem; margin-bottom:10px; font-weight:700;">NEXUS_OS // NEURAL_HANDSHAKE</div>
     <div id="boot-log" style="color:#333; font-size:0.5rem; text-align:center; height:60px; overflow:hidden; font-family:monospace; line-height:1.5;"></div>
     <div style="width:150px; height:1px; background:#111; margin-top:20px; position:relative;">
@@ -313,7 +309,7 @@
 
 <div id="app">
     <header class="top-bar">
-        <div class="brand glitch-text">NEXUS<span>//</span>GRID</div>
+        <div class="brand">NEXUS<span>//</span>GRID</div>
         <div style="display: flex; align-items: center; gap: 15px;">
             <div id="sync-container" style="display: flex; align-items: center; gap: 8px; cursor: pointer;" onclick="syncNews()">
                 <span class="material-symbols-outlined" id="sync-icon" style="font-size: 18px; color: var(--text-muted);">sync</span>
@@ -546,6 +542,14 @@
 </div>
 
 <script>
+    /* --- UTILITIES --- */
+    function escapeHTML(str) {
+        if (!str) return "";
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+
     /* --- CONFIG & STATE --- */
     const i18n = {
         en: {
@@ -583,7 +587,9 @@
 
     /* --- THEME & L10N --- */
     function updateHue() {
-        const h = document.getElementById('hue-slider').value;
+        const slider = document.getElementById('hue-slider');
+        if (!slider) return;
+        const h = slider.value;
         state.hue = h;
         localStorage.setItem('nexus_hue', h);
         document.documentElement.style.setProperty('--primary-hue', h);
@@ -618,11 +624,12 @@
             gsap.to(icon, { rotation: "+=360", duration: 1, repeat: 1, ease: "power1.inOut" });
         }
 
-        const localApi = `/api/news?region=${state.region}`;
         document.getElementById('last-sync-time').innerText = "SYNCING...";
         document.getElementById('retry-overlay').classList.add('hidden');
 
+        // Primary Attempt: Local Proxy
         try {
+            const localApi = `/api/news?region=${state.region}`;
             let response = await fetch(localApi);
             if (response.ok) {
                 let data = await response.json();
@@ -633,61 +640,33 @@
                     return;
                 }
             }
-        } catch (e) {
-            console.error("Sync failed", e);
-        }
+        } catch (e) { console.warn("Local sync failed, trying fallback..."); }
+
+        // Fallback Attempt: rss2json
+        try {
+            const rss_urls = {
+                'WW': 'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en',
+                'DE': 'https://news.google.com/rss?hl=de&gl=DE&ceid=DE:de',
+                'UK': 'https://news.google.com/rss?hl=en-GB&gl=GB&ceid=GB:en',
+                'FR': 'https://news.google.com/rss?hl=fr&gl=FR&ceid=FR:fr',
+                'JP': 'https://news.google.com/rss?hl=ja&gl=JP&ceid=JP:ja'
+            };
+            const fallbackUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rss_urls[state.region] || rss_urls['WW'])}`;
+            let response = await fetch(fallbackUrl);
+            if (response.ok) {
+                let data = await response.json();
+                if (data.items && data.items.length > 0) {
+                    processData(data.items);
+                    document.getElementById('last-sync-time').innerText = new Date().toLocaleTimeString() + " [FALLBACK]";
+                    state.failCount = 0;
+                    return;
+                }
+            }
+        } catch (e) { console.error("Fallback sync failed", e); }
 
         state.failCount++;
         document.getElementById('last-sync-time').innerText = "OFFLINE";
-        if (state.failCount > 0) {
-            document.getElementById('retry-overlay').classList.remove('hidden');
-        }
-    }
-
-    function showAlert(news) {
-        const modal = document.getElementById('alert-breaking');
-        if (!modal.classList.contains('hidden')) return;
-
-        document.getElementById('alert-title').innerText = news.title;
-        document.getElementById('alert-btn-view').onclick = () => {
-            closeAlert();
-            openDetail(news.id);
-        };
-
-        modal.classList.remove('hidden');
-        if (typeof gsap !== 'undefined') {
-            gsap.fromTo(modal.querySelector('.modal-content'),
-                { scale: 0.8, opacity: 0, y: 20 },
-                { scale: 1, opacity: 1, y: 0, duration: 0.15, ease: "power2.out" }
-            );
-        }
-    }
-
-    function closeAlert() {
-        const modal = document.getElementById('alert-breaking');
-        if (typeof gsap !== 'undefined') {
-            gsap.to(modal.querySelector('.modal-content'), {
-                scale: 0.9, opacity: 0, duration: 0.1, onComplete: () => modal.classList.add('hidden')
-            });
-        } else {
-            modal.classList.add('hidden');
-        }
-    }
-
-    function extractKeywords(t) {
-        const stops = new Set(['the','and','for','with','this','that','from','google','news','video','says','after','watch','breaking', 'report', 'investigators', 'find', 'update', 'latest', 'news', 'google', 'more', 'about', 'warns', 'warn', 'agree', 'shows', 'will', 'first', 'year', 'could', 'should', 'would']);
-        const cleanTitle = t.split(' - ')[0];
-        return cleanTitle.toLowerCase().replace(/[^\w\s]/g,' ').split(/\s+/).filter(w => w.length > 3 && !stops.has(w)).slice(0,3);
-    }
-
-    function getCategory(title) {
-        const t = title.toLowerCase();
-        if (/(cyber|hack|security|leak|malware|ransomware|breach|exploit|firewall)/i.test(t)) return 'CYBER';
-        if (/(tech|ai|robot|digital|software|data|silicon|apple|google|microsoft|nvidia|tesla|musk|spacex|quantum|computing|smartphone|app)/i.test(t)) return 'TECH';
-        if (/(climate|environment|bio|health|medical|virus|pandemic|dna|nature|green|energy|oil|gas|ocean|ecology|warming|solar|wind)/i.test(t)) return 'BIO';
-        if (/(finance|market|stock|economy|trade|bank|crypto|bitcoin|price|dollar|euro|inflation|interest|fed|nasdaq|dow)/i.test(t)) return 'FINANCE';
-        if (/(war|conflict|politics|election|government|china|russia|usa|un|world|crisis|summit|trump|biden|border|senate|parliament|nato)/i.test(t)) return 'GLOBAL';
-        return 'INTEL';
+        document.getElementById('retry-overlay').classList.remove('hidden');
     }
 
     function processData(items) {
@@ -702,7 +681,7 @@
             return {
                 id: i,
                 title: title,
-                link: n.link || "#",
+                link: n.link || n.guid || "#",
                 rawDate: n.pubDate,
                 date: n.pubDate ? new Date(n.pubDate).toLocaleDateString() : new Date().toLocaleDateString(),
                 region: n.source || state.region,
@@ -710,7 +689,7 @@
                 sentiment: (Math.random() * 2 - 1).toFixed(2),
                 entities: keywords.map(k => ({ text: k.toUpperCase(), type: Math.random() > 0.5 ? 'ORGA' : 'LOC' })),
                 img: `https://loremflickr.com/800/600/${terms}/all?lock=${i}`,
-                content: n.description || "",
+                content: n.description || n.content || "",
                 verified: Math.random() > 0.3,
                 integrity: Math.floor(Math.random() * 40) + 60,
                 keywords: keywords
@@ -720,11 +699,10 @@
         updateSectorAnalysis();
 
         // Breaking check
-        const breaking = items.slice(0, 10).find(n =>
-            n.title.toUpperCase().includes('BREAKING') ||
-            n.title.toUpperCase().includes('EILMELDUNG') ||
-            n.title.toUpperCase().includes('URGENT')
-        );
+        const breaking = items.slice(0, 10).find(n => {
+            const t = (n.title || "").toUpperCase();
+            return t.includes('BREAKING') || t.includes('EILMELDUNG') || t.includes('URGENT');
+        });
         if (breaking) {
             const newsObj = state.news.find(x => x.title === breaking.title);
             if (newsObj) showAlert(newsObj);
@@ -735,7 +713,7 @@
         renderFeed('main-feed', state.news);
         renderFeed('archive-feed', state.news);
         renderTimeline();
-        document.getElementById('global-ticker').innerHTML = state.news.map(n => `<span class="ticker-item">${n.title}</span>`).join('');
+        document.getElementById('global-ticker').innerHTML = state.news.map(n => `<span class="ticker-item">${escapeHTML(n.title)}</span>`).join('');
         renderHotspots();
     }
 
@@ -748,18 +726,18 @@
             try { sig = btoa(unescape(encodeURIComponent(n.title))).substring(0, 8).toUpperCase(); } catch(e){}
             return `
                 <div class="glass-panel news-card" onclick="openDetail(${n.id})">
-                    <img src="${n.img}" class="news-thumb" loading="lazy">
+                    <img src="${n.img}" class="news-thumb" loading="lazy" onerror="this.src='https://picsum.photos/seed/${n.id}/800/600?blur=2'">
                     <div class="card-body">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                            <span class="card-cat">${n.cat} // ${n.region}</span>
+                            <span class="card-cat">${escapeHTML(n.cat)} // ${escapeHTML(n.region)}</span>
                             <div class="${n.verified ? 'badge-verified' : 'badge-unverified'}">
                                 ${n.verified ? d['verified'] : d['unverified']}
                             </div>
                         </div>
-                        <h4 class="card-title">${n.title}</h4>
+                        <h4 class="card-title">${escapeHTML(n.title)}</h4>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
                             <div style="font-size:0.55rem; color:var(--text-muted); opacity:0.6;">${sig}</div>
-                            <div style="font-size:0.55rem; color:var(--text-muted);">${n.date}</div>
+                            <div style="font-size:0.55rem; color:var(--text-muted);">${escapeHTML(n.date)}</div>
                         </div>
                     </div>
                 </div>
@@ -767,119 +745,23 @@
         }).join('');
 
         if (typeof gsap !== 'undefined') {
-            gsap.from('#' + id + ' .news-card', {
-                opacity: 0, y: 15, duration: 0.1, stagger: 0.02, ease: "power2.out"
-            });
+            gsap.from('#' + id + ' .news-card', { opacity: 0, y: 10, duration: 0.05, stagger: 0.01, ease: "power2.out" });
         }
     }
 
-    function renderTimeline() {
-        const c = document.getElementById('timeline-feed');
-        c.innerHTML = state.news.map(n => `
-            <div class="glass-panel timeline-node" onclick="openDetail(${n.id})">
-                <div class="node-dot"></div>
-                <div style="font-size:0.7rem; color:var(--primary); margin-bottom:5px;">${n.date} // ${n.cat}</div>
-                <h4 style="margin:0; font-size:0.9rem; line-height:1.4;">${n.title}</h4>
-            </div>
-        `).join('');
-
-        const hours = new Array(24).fill(0);
-        state.news.forEach(n => {
-            const d = new Date(n.rawDate || Date.now());
-            if (!isNaN(d.getHours())) hours[d.getHours()]++;
-        });
-        const max = Math.max(...hours, 1);
-        const d = document.getElementById('time-density');
-        d.innerHTML = hours.map(count => `<div style="flex:1; background:var(--primary); opacity:${count > 0 ? 0.8 : 0.1}; height:${Math.max((count/max)*100, 5)}%; border-radius:1px;"></div>`).join('');
-    }
-
-    function renderHotspots() {
-        const c = document.getElementById('map-hotspots');
-        if (!c) return;
-        c.innerHTML = '';
-        for(let i=0; i<8; i++) {
-            const div = document.createElement('div');
-            div.className = 'hotspot';
-            div.style.left = (Math.random()*80 + 10) + '%';
-            div.style.top = (Math.random()*60 + 20) + '%';
-            div.onmouseover = () => {
-                const lat = document.getElementById('map-lat');
-                const lng = document.getElementById('map-lng');
-                if (lat) lat.innerText = (Math.random() * 180 - 90).toFixed(4);
-                if (lng) lng.innerText = (Math.random() * 360 - 180).toFixed(4);
-            };
-            div.onclick = () => openDetail(Math.floor(Math.random()*state.news.length));
-            c.appendChild(div);
-        }
-    }
-
-    function updateSectorAnalysis() {
-        const counts = {};
-        const entityCounts = {};
-        state.news.forEach(n => {
-            counts[n.cat] = (counts[n.cat] || 0) + 1;
-            n.keywords.forEach(k => {
-                const key = k.toUpperCase();
-                entityCounts[key] = (entityCounts[key] || 0) + 1;
-            });
-        });
-
-        const c = document.getElementById('sector-bars');
-        c.innerHTML = Object.entries(counts).map(([cat, count]) => {
-            const pct = (count / state.news.length) * 100;
-            return `
-                <div style="display:flex; align-items:center; gap:10px; font-size:0.55rem;">
-                    <div style="width:50px; color:var(--text-muted);">${cat}</div>
-                    <div style="flex:1; height:3px; background:rgba(255,255,255,0.03); overflow:hidden;">
-                        <div class="sector-fill" style="height:100%; width:0%; background:var(--primary);" data-pct="${pct}"></div>
-                    </div>
-                    <div style="width:25px; text-align:right;">${Math.round(pct)}%</div>
-                </div>
-            `;
-        }).join('');
-        if (typeof gsap !== 'undefined') {
-            gsap.to('.sector-fill', { width: (i, el) => el.dataset.pct + '%', duration: 0.5, ease: "power2.out", stagger: 0.05 });
-        }
-
-        const ec = document.getElementById('entity-cloud');
-        const sortedEntities = Object.entries(entityCounts).sort((a,b) => b[1] - a[1]);
-        ec.innerHTML = sortedEntities.slice(0, 15).map(([e, count]) => {
-            const maxCount = sortedEntities[0][1];
-            const size = 0.55 + (count / maxCount) * 0.35;
-            const hue = getComputedStyle(document.documentElement).getPropertyValue('--primary-hue').trim();
-            return `<span style="font-size:${size}rem; color:var(--accent); border:1px solid hsla(${hue}, 70%, 53%, 0.2); padding:2px 6px; border-radius:3px; white-space:nowrap;">${e}</span>`;
-        }).join('');
-    }
-
-    /* --- UI FLOW --- */
-    function scrambleText(id, text) {
-        const el = document.getElementById(id);
-        if (!el) return;
-        const chars = '!<>-_\\/[]{}—=+*^?#________';
-        let iteration = 0;
-        if (el._scrambleInterval) clearInterval(el._scrambleInterval);
-        el._scrambleInterval = setInterval(() => {
-            el.textContent = text.split('').map((char, index) => {
-                if (index < iteration) return text[index];
-                return chars[Math.floor(Math.random() * chars.length)];
-            }).join('');
-            if (iteration >= text.length) clearInterval(el._scrambleInterval);
-            iteration += 1 / 3;
-        }, 15);
-    }
-
+    /* --- VIEW FLOW --- */
     function navTo(v) {
         if (state.activeView === v) return;
         const old = document.getElementById('view-' + state.activeView);
         const target = document.getElementById('view-' + v);
-
         const glitch = document.getElementById('global-glitch');
+
         if (typeof gsap !== 'undefined') {
             gsap.fromTo(glitch, { opacity: 0.2 }, { opacity: 0, duration: 0.05 });
             gsap.to(old, { opacity: 0, y: 5, duration: 0.05, onComplete: () => {
                 old.classList.add('hidden');
                 target.classList.remove('hidden');
-                gsap.fromTo(target, { opacity: 0, y: -5 }, { opacity: 1, y: 0, duration: 0.08 });
+                gsap.fromTo(target, { opacity: 0, y: -5 }, { opacity: 1, y: 0, duration: 0.05 });
             }});
         } else {
             old.classList.add('hidden');
@@ -913,6 +795,7 @@
         for(let i=0; i<3; i++) {
             const img = document.createElement('img');
             img.src = `https://loremflickr.com/320/240/${searchTerms}/all?lock=${n.id + i + 10}`;
+            img.onerror = function() { this.src=`https://picsum.photos/seed/${n.id+i}/320/240?grayscale`; };
             img.style.width = '100%';
             img.style.height = '60px';
             img.style.objectFit = 'cover';
@@ -922,10 +805,10 @@
             uplinks.appendChild(img);
         }
 
-        const analysis = `SENTIMENT: ${n.sentiment} // DETECTED_ENTITIES: ${n.entities.length}\nSignal polarity suggests high-density ${n.cat} fluctuation in the ${n.region} sector. Source integrity verified at ${n.integrity}%.`;
+        const analysis = `SENTIMENT: ${n.sentiment} // ENTITIES: ${n.entities.length}\nPolarity suggests high-density ${n.cat} fluctuation in the ${n.region} sector. Source integrity: ${n.integrity}%.`;
         scrambleText('det-analysis', analysis);
 
-        document.getElementById('det-entities').innerHTML = n.entities.map(e => `<span class="glow-badge" style="border-color:var(--primary); color:var(--highlight);">${e.text} [${e.type}]</span>`).join('');
+        document.getElementById('det-entities').innerHTML = n.entities.map(e => `<span class="glow-badge" style="border-color:var(--primary); color:var(--highlight);">${escapeHTML(e.text)} [${escapeHTML(e.type)}]</span>`).join('');
         document.getElementById('det-cat').innerText = `${n.cat} // ${n.region}`;
         document.getElementById('det-link').href = n.link;
         document.getElementById('det-verified').innerHTML = `<div class="${n.verified ? 'badge-verified' : 'badge-unverified'}">${n.verified ? d['verified'] : d['unverified']}</div>`;
@@ -947,128 +830,123 @@
         }
     }
 
-    function filterVault() {
-        const q = document.getElementById('vault-search').value.toLowerCase();
-        const filtered = state.news.filter(n => n.title.toLowerCase().includes(q) || n.cat.toLowerCase().includes(q));
-        renderFeed('archive-feed', filtered);
+    /* --- SHARED LOGIC (STUBS FOR BREVITY) --- */
+    function showAlert(news) {
+        const modal = document.getElementById('alert-breaking');
+        if (!modal || !modal.classList.contains('hidden')) return;
+        document.getElementById('alert-title').innerText = news.title;
+        document.getElementById('alert-btn-view').onclick = () => { closeAlert(); openDetail(news.id); };
+        modal.classList.remove('hidden');
+        if (typeof gsap !== 'undefined') gsap.fromTo(modal.querySelector('.modal-content'), { scale: 0.8, opacity: 0, y: 20 }, { scale: 1, opacity: 1, y: 0, duration: 0.15, ease: "power2.out" });
     }
-
-    function setRegion(r) {
-        state.region = r;
-        localStorage.setItem('nexus_reg', r);
-        document.querySelectorAll('[id^="btn-"]').forEach(btn => btn.classList.remove('active'));
-        const activeBtn = document.getElementById('btn-' + r.toLowerCase());
-        if (activeBtn) activeBtn.classList.add('active');
-        syncNews();
+    function closeAlert() {
+        const modal = document.getElementById('alert-breaking');
+        if (typeof gsap !== 'undefined') gsap.to(modal.querySelector('.modal-content'), { scale: 0.9, opacity: 0, duration: 0.1, onComplete: () => modal.classList.add('hidden') });
+        else modal.classList.add('hidden');
     }
-
-    function toggleFilters() {
-        document.getElementById('modal-settings').classList.toggle('hidden');
+    function extractKeywords(t) {
+        const stops = new Set(['the','and','for','with','this','that','from','google','news','video','says','after','watch','breaking', 'report', 'investigators', 'find', 'update', 'latest', 'news', 'google', 'more', 'about', 'warns', 'warn', 'agree', 'shows', 'will', 'first', 'year', 'could', 'should', 'would']);
+        return (t.split(' - ')[0] || "").toLowerCase().replace(/[^\w\s]/g,' ').split(/\s+/).filter(w => w.length > 3 && !stops.has(w)).slice(0,3);
     }
-
-    function filterByCategory(cat) {
-        if (cat === 'ALL') renderFeed('main-feed', state.news);
-        else renderFeed('main-feed', state.news.filter(n => n.cat === cat));
-        glitchFlash();
+    function getCategory(title) {
+        const t = (title || "").toLowerCase();
+        if (/(cyber|hack|security|leak|malware|ransomware|breach|exploit|firewall)/i.test(t)) return 'CYBER';
+        if (/(tech|ai|robot|digital|software|data|silicon|apple|google|microsoft|nvidia|tesla|musk|spacex|quantum|computing|smartphone|app)/i.test(t)) return 'TECH';
+        if (/(climate|environment|bio|health|medical|virus|pandemic|dna|nature|green|energy|oil|gas|ocean|ecology|warming|solar|wind)/i.test(t)) return 'BIO';
+        if (/(finance|market|stock|economy|trade|bank|crypto|bitcoin|price|dollar|euro|inflation|interest|fed|nasdaq|dow)/i.test(t)) return 'FINANCE';
+        if (/(war|conflict|politics|election|government|china|russia|usa|un|world|crisis|summit|trump|biden|border|senate|parliament|nato)/i.test(t)) return 'GLOBAL';
+        return 'INTEL';
     }
-
-    function glitchFlash() {
-        const g = document.getElementById('global-glitch');
-        if (typeof gsap !== 'undefined') {
-            gsap.fromTo(g, { opacity: 0.3 }, { opacity: 0, duration: 0.2 });
+    function renderTimeline() {
+        const c = document.getElementById('timeline-feed');
+        c.innerHTML = state.news.map(n => `<div class="glass-panel timeline-node" onclick="openDetail(${n.id})"><div class="node-dot"></div><div style="font-size:0.7rem; color:var(--primary); margin-bottom:5px;">${escapeHTML(n.date)} // ${escapeHTML(n.cat)}</div><h4 style="margin:0; font-size:0.9rem; line-height:1.4;">${escapeHTML(n.title)}</h4></div>`).join('');
+        const hours = new Array(24).fill(0);
+        state.news.forEach(n => { const d = new Date(n.rawDate || Date.now()); if (!isNaN(d.getHours())) hours[d.getHours()]++; });
+        const max = Math.max(...hours, 1);
+        document.getElementById('time-density').innerHTML = hours.map(count => `<div style="flex:1; background:var(--primary); opacity:${count > 0 ? 0.8 : 0.1}; height:${Math.max((count/max)*100, 5)}%; border-radius:1px;"></div>`).join('');
+    }
+    function renderHotspots() {
+        const c = document.getElementById('map-hotspots');
+        if (!c) return; c.innerHTML = '';
+        for(let i=0; i<8; i++) {
+            const div = document.createElement('div'); div.className = 'hotspot'; div.style.left = (Math.random()*80 + 10) + '%'; div.style.top = (Math.random()*60 + 20) + '%';
+            div.onmouseover = () => { document.getElementById('map-lat').innerText = (Math.random() * 180 - 90).toFixed(4); document.getElementById('map-lng').innerText = (Math.random() * 360 - 180).toFixed(4); };
+            div.onclick = () => openDetail(Math.floor(Math.random()*state.news.length));
+            c.appendChild(div);
         }
     }
-
+    function updateSectorAnalysis() {
+        const counts = {}; const entityCounts = {};
+        state.news.forEach(n => { counts[n.cat] = (counts[n.cat] || 0) + 1; n.keywords.forEach(k => { const key = k.toUpperCase(); entityCounts[key] = (entityCounts[key] || 0) + 1; }); });
+        const c = document.getElementById('sector-bars');
+        c.innerHTML = Object.entries(counts).map(([cat, count]) => {
+            const pct = (count / state.news.length) * 100;
+            return `<div style="display:flex; align-items:center; gap:10px; font-size:0.55rem;"><div style="width:50px; color:var(--text-muted);">${escapeHTML(cat)}</div><div style="flex:1; height:3px; background:rgba(255,255,255,0.03); overflow:hidden;"><div class="sector-fill" style="height:100%; width:0%; background:var(--primary);" data-pct="${pct}"></div></div><div style="width:25px; text-align:right;">${Math.round(pct)}%</div></div>`;
+        }).join('');
+        if (typeof gsap !== 'undefined') gsap.to('.sector-fill', { width: (i, el) => el.dataset.pct + '%', duration: 0.5, ease: "power2.out", stagger: 0.05 });
+        const ec = document.getElementById('entity-cloud');
+        const sortedEntities = Object.entries(entityCounts).sort((a,b) => b[1] - a[1]);
+        ec.innerHTML = sortedEntities.slice(0, 15).map(([e, count]) => {
+            const maxCount = sortedEntities[0][1]; const size = 0.55 + (count / maxCount) * 0.35; const hue = getComputedStyle(document.documentElement).getPropertyValue('--primary-hue').trim();
+            return `<span style="font-size:${size}rem; color:var(--accent); border:1px solid hsla(${hue}, 70%, 53%, 0.2); padding:2px 6px; border-radius:3px; white-space:nowrap;">${escapeHTML(e)}</span>`;
+        }).join('');
+    }
+    function scrambleText(id, text) {
+        const el = document.getElementById(id); if (!el) return;
+        const chars = '!<>-_\\/[]{}—=+*^?#________'; let iteration = 0; if (el._scrambleInterval) clearInterval(el._scrambleInterval);
+        el._scrambleInterval = setInterval(() => { el.textContent = text.split('').map((char, index) => { if (index < iteration) return text[index]; return chars[Math.floor(Math.random() * chars.length)]; }).join(''); if (iteration >= text.length) clearInterval(el._scrambleInterval); iteration += 1 / 3; }, 15);
+    }
+    function filterVault() { const q = document.getElementById('vault-search').value.toLowerCase(); const filtered = state.news.filter(n => n.title.toLowerCase().includes(q) || n.cat.toLowerCase().includes(q)); renderFeed('archive-feed', filtered); }
+    function setRegion(r) { state.region = r; localStorage.setItem('nexus_reg', r); document.querySelectorAll('[id^="btn-"]').forEach(btn => btn.classList.remove('active')); const activeBtn = document.getElementById('btn-' + r.toLowerCase()); if (activeBtn) activeBtn.classList.add('active'); syncNews(); }
+    function toggleFilters() { document.getElementById('modal-settings').classList.toggle('hidden'); }
+    function filterByCategory(cat) { if (cat === 'ALL') renderFeed('main-feed', state.news); else renderFeed('main-feed', state.news.filter(n => n.cat === cat)); glitchFlash(); }
+    function glitchFlash() { const g = document.getElementById('global-glitch'); if (typeof gsap !== 'undefined') gsap.fromTo(g, { opacity: 0.3 }, { opacity: 0, duration: 0.2 }); }
     function initNetwork() {
-        const canvas = document.getElementById('network-canvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        let dots = [];
-        const count = 40;
-
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            dots = [];
-            for(let i=0; i<count; i++) dots.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5 });
-        }
-
-        function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const hue = getComputedStyle(document.documentElement).getPropertyValue('--primary-hue').trim();
-            ctx.strokeStyle = `hsla(${hue}, 70%, 53%, 0.1)`;
-            ctx.fillStyle = `hsla(${hue}, 70%, 53%, 0.2)`;
-
-            dots.forEach((d, i) => {
-                d.x += d.vx; d.y += d.vy;
-                if(d.x < 0 || d.x > canvas.width) d.vx *= -1;
-                if(d.y < 0 || d.y > canvas.height) d.vy *= -1;
-                ctx.beginPath(); ctx.arc(d.x, d.y, 1, 0, Math.PI*2); ctx.fill();
-                for(let j=i+1; j<dots.length; j++) {
-                    const d2 = dots[j];
-                    const dist = Math.hypot(d.x-d2.x, d.y-d2.y);
-                    if(dist < 150) {
-                        ctx.globalAlpha = 1 - (dist/150);
-                        ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d2.x, d2.y); ctx.stroke();
-                    }
-                }
-            });
-            requestAnimationFrame(draw);
-        }
-        window.addEventListener('resize', resize);
-        resize(); draw();
+        const canvas = document.getElementById('network-canvas'); if (!canvas) return; const ctx = canvas.getContext('2d'); let dots = []; const count = 40;
+        function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; dots = []; for(let i=0; i<count; i++) dots.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, vx: (Math.random()-0.5)*0.5, vy: (Math.random()-0.5)*0.5 }); }
+        function draw() { ctx.clearRect(0, 0, canvas.width, canvas.height); const hue = getComputedStyle(document.documentElement).getPropertyValue('--primary-hue').trim(); ctx.strokeStyle = `hsla(${hue}, 70%, 53%, 0.1)`; ctx.fillStyle = `hsla(${hue}, 70%, 53%, 0.2)`; dots.forEach((d, i) => { d.x += d.vx; d.y += d.vy; if(d.x < 0 || d.x > canvas.width) d.vx *= -1; if(d.y < 0 || d.y > canvas.height) d.vy *= -1; ctx.beginPath(); ctx.arc(d.x, d.y, 1, 0, Math.PI*2); ctx.fill(); for(let j=i+1; j<dots.length; j++) { const d2 = dots[j]; const dist = Math.hypot(d.x-d2.x, d.y-d2.y); if(dist < 150) { ctx.globalAlpha = 1 - (dist/150); ctx.beginPath(); ctx.moveTo(d.x, d.y); ctx.lineTo(d2.x, d2.y); ctx.stroke(); } } }); requestAnimationFrame(draw); }
+        window.addEventListener('resize', resize); resize(); draw();
     }
 
     /* --- INITIALIZATION --- */
     window.onload = () => {
-        syncNews();
-        initNetwork();
+        // Safe Removal of Boot Loader
+        const removeBoot = () => {
+            const bl = document.getElementById('boot-loader');
+            if (!bl) return;
+            if (typeof gsap !== 'undefined') {
+                gsap.to(bl, { opacity: 0, duration: 0.2, onComplete: () => bl.remove() });
+            } else {
+                bl.classList.add('auto-hide');
+                setTimeout(() => bl.remove(), 1000);
+            }
+        };
+        setTimeout(removeBoot, 5000); // Fail-safe 5s
 
+        syncNews().finally(() => {
+            // Success removal
+            const log = document.getElementById('boot-log');
+            if (log) {
+                const d = document.createElement('div'); d.innerText = "> UPLINK_STABLE. READY."; log.appendChild(d);
+                if (typeof gsap !== 'undefined') gsap.to('#boot-bar', { width: "100%", duration: 0.1, onComplete: removeBoot });
+                else removeBoot();
+            }
+        });
+
+        initNetwork();
         const env = document.getElementById('env-chart');
         if (env) env.innerHTML = Array.from({length: 40}).map(() => `<div style="flex:1; height:${Math.random()*100}%; background:var(--primary); opacity:0.3; border-radius:1px; transition: height 0.4s var(--ease-tech);"></div>`).join('');
-
         setInterval(() => {
-            const up = document.getElementById('stat-uplink');
-            const lat = document.getElementById('stat-latency');
-            const bwp = document.getElementById('bw-pct');
-            const stp = document.getElementById('st-pct');
+            const up = document.getElementById('stat-uplink'); const lat = document.getElementById('stat-latency');
+            const bwp = document.getElementById('bw-pct'); const stp = document.getElementById('st-pct');
             if (up) up.innerText = (Math.random() * 5 + 2).toFixed(1) + " TB/s";
             if (lat) lat.innerText = Math.floor(Math.random() * 20 + 5) + "ms";
             if (env) env.querySelectorAll('div').forEach(b => b.style.height = (Math.random()*100)+"%");
             if (bwp) bwp.innerText = (80 + Math.floor(Math.random()*15)) + "%";
             if (stp) stp.innerText = (95 + Math.floor(Math.random()*4)) + "%";
         }, 1000);
-
-        const log = document.getElementById('boot-log');
-        const lines = ['INIT_NEXUS...', 'KERN_MEM_ALLOC', 'UPLINK_ESTABLISH', 'READY.'];
-        let i = 0;
-        const interval = setInterval(() => {
-            if(i >= lines.length) {
-                clearInterval(interval);
-                if (typeof gsap !== 'undefined') {
-                    gsap.to('#boot-bar', { width: "100%", duration: 0.2, onComplete: () => {
-                        gsap.to('#boot-loader', { opacity: 0, duration: 0.2, onComplete: () => {
-                            document.getElementById('boot-loader').remove();
-                        }});
-                    }});
-                } else {
-                    document.getElementById('boot-loader').classList.add('auto-hide');
-                }
-            } else {
-                const d = document.createElement('div'); d.innerText = `> ${lines[i]}`; log.appendChild(d); i++;
-            }
-        }, 100);
-
-        applyL10n();
-        updateHue();
-
-        document.addEventListener('click', (e) => {
-            const el = e.target.closest('button, .news-card, .nav-item, .glow-badge');
-            if (el && typeof gsap !== 'undefined') {
-                gsap.to(el, { scale: 0.95, duration: 0.08, yoyo: true, repeat: 1 });
-            }
-        });
-
+        applyL10n(); updateHue();
+        document.addEventListener('click', (e) => { const el = e.target.closest('button, .news-card, .nav-item, .glow-badge'); if (el && typeof gsap !== 'undefined') gsap.to(el, { scale: 0.95, duration: 0.08, yoyo: true, repeat: 1 }); });
         setInterval(syncNews, 30 * 60 * 1000);
     };
 </script>

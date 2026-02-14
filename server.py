@@ -2,6 +2,7 @@
 import http.server
 import socketserver
 import urllib.request
+import urllib.parse
 import json
 import xml.etree.ElementTree as ET
 import ssl
@@ -14,35 +15,35 @@ ssl_context = ssl._create_unverified_context()
 
 class NexusHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
-        # Forward root to index.html
-        if self.path == '/' or self.path == '':
-            self.path = '/index.html'
+        parsed_url = urllib.parse.urlparse(self.path)
+        if parsed_url.path.startswith('/api/news'):
+            self.handle_news_api(parsed_url.query)
+            return
+        super().do_GET()
 
-        # Handle legacy path if someone bookmarked it
-        if self.path == '/Nexus_News.html':
-            self.path = '/index.html'
+    def translate_path(self, path):
+        # path here is the URL path
+        parsed = urllib.parse.urlparse(path)
+        p = parsed.path
 
-        if self.path.startswith('/api/news'):
-            self.handle_news_api()
-        else:
-            # Check if file exists to prevent 404 on the proxy
-            if not os.path.exists(self.path.lstrip('/')):
-                # If it's a sub-path that doesn't exist, maybe it's meant for index.html (SPA routing)
-                if '.' not in self.path:
-                    self.path = '/index.html'
+        # Mapping
+        if p in ['/', '', '/Nexus_News.html']:
+            p = '/index.html'
 
-            super().do_GET()
+        # Determine local path
+        local_path = super().translate_path(p)
 
-    def handle_news_api(self):
-        query = self.path.split('?')[-1]
-        params = {}
-        if '=' in query:
-            for pair in query.split('&'):
-                if '=' in pair:
-                    k, v = pair.split('=')
-                    params[k] = v
+        # SPA routing fallback: if it's not a file and doesn't exist, serve index.html
+        if not os.path.exists(local_path):
+            basename = os.path.basename(p)
+            if not basename or '.' not in basename:
+                return super().translate_path('/index.html')
 
-        region = params.get('region', 'WW')
+        return local_path
+
+    def handle_news_api(self, query_string):
+        params = urllib.parse.parse_qs(query_string)
+        region = params.get('region', ['WW'])[0]
 
         rss_urls = {
             'WW': 'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en',
@@ -54,10 +55,9 @@ class NexusHandler(http.server.SimpleHTTPRequestHandler):
 
         try:
             url = rss_urls.get(region, rss_urls['WW'])
-            # Add some randomness to query to bypass caching if necessary
-            # url += "&t=" + str(time.time())
-
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'})
+            req = urllib.request.Request(url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+            })
 
             with urllib.request.urlopen(req, context=ssl_context, timeout=10) as response:
                 xml_data = response.read().decode('utf-8')
@@ -80,7 +80,7 @@ class NexusHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({'status': 'ok', 'region': region, 'count': len(items), 'items': items}).encode())
         except Exception as e:
-            print(f"API Error: {e}")
+            print(f"API Error [{region}]: {e}")
             self.send_response(500)
             self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
