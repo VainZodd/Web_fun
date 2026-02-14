@@ -4,26 +4,43 @@ import socketserver
 import urllib.request
 import json
 import xml.etree.ElementTree as ET
+import ssl
+import os
 
 PORT = 3000
 
+# Create an unverified SSL context for outgoing requests to bypass certificate issues
+ssl_context = ssl._create_unverified_context()
+
 class NexusHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
+        # Forward root to index.html
+        if self.path == '/' or self.path == '':
+            self.path = '/index.html'
+
+        # Handle legacy path if someone bookmarked it
+        if self.path == '/Nexus_News.html':
+            self.path = '/index.html'
+
         if self.path.startswith('/api/news'):
             self.handle_news_api()
         else:
+            # Check if file exists to prevent 404 on the proxy
+            if not os.path.exists(self.path.lstrip('/')):
+                # If it's a sub-path that doesn't exist, maybe it's meant for index.html (SPA routing)
+                if '.' not in self.path:
+                    self.path = '/index.html'
+
             super().do_GET()
 
     def handle_news_api(self):
         query = self.path.split('?')[-1]
-        region = 'WW'
-
-        # Parse region from query
         params = {}
-        for pair in query.split('&'):
-            if '=' in pair:
-                k, v = pair.split('=')
-                params[k] = v
+        if '=' in query:
+            for pair in query.split('&'):
+                if '=' in pair:
+                    k, v = pair.split('=')
+                    params[k] = v
 
         region = params.get('region', 'WW')
 
@@ -37,8 +54,12 @@ class NexusHandler(http.server.SimpleHTTPRequestHandler):
 
         try:
             url = rss_urls.get(region, rss_urls['WW'])
-            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-            with urllib.request.urlopen(req) as response:
+            # Add some randomness to query to bypass caching if necessary
+            # url += "&t=" + str(time.time())
+
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'})
+
+            with urllib.request.urlopen(req, context=ssl_context, timeout=10) as response:
                 xml_data = response.read().decode('utf-8')
 
             root = ET.fromstring(xml_data)
@@ -52,20 +73,21 @@ class NexusHandler(http.server.SimpleHTTPRequestHandler):
                     'source': item.find('source').text if item.find('source') is not None else region
                 })
 
-            # Ensure we return at least some data, even if the feed is short
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
+            self.send_header('Cache-Control', 'no-cache, no-store, must-revalidate')
             self.end_headers()
-            self.wfile.write(json.dumps({'status': 'ok', 'region': region, 'items': items}).encode())
+            self.wfile.write(json.dumps({'status': 'ok', 'region': region, 'count': len(items), 'items': items}).encode())
         except Exception as e:
+            print(f"API Error: {e}")
             self.send_response(500)
+            self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
             self.wfile.write(json.dumps({'status': 'error', 'message': str(e)}).encode())
 
 if __name__ == "__main__":
-    # Use allow_reuse_address to avoid "Address already in use" on restarts
     socketserver.TCPServer.allow_reuse_address = True
     with socketserver.TCPServer(("0.0.0.0", PORT), NexusHandler) as httpd:
         print(f"Serving Nexus at http://localhost:{PORT}")

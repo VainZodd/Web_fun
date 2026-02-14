@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NEXUS // GLOBAL NEWS GRID</title>
-    
+
     <!-- External Assets: Google Fonts & Material Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,29 +21,29 @@
             --bg-deep: #050505;
             --bg-dark: #0a0a0a;
             --bg-panel: rgba(20, 20, 20, 0.6);
-            
+
             --scanline-opacity: 0.1;
             --glitch-intensity: 0.5;
 
-            --primary: hsl(var(--primary-hue), 70%, 53%); /* Electric Violet */
-            --accent: hsl(calc(var(--primary-hue) + 20), 90%, 53%); /* Neon Purple */
+            --primary: hsl(var(--primary-hue), 70%, 53%);
+            --accent: hsl(calc(var(--primary-hue) + 20), 90%, 53%);
             --highlight: #E0B0FF;
             --alert: #FF003C;
             --success: #00F0FF;
-            
+
             --text-main: #FFFFFF;
             --text-muted: #A0A0A0;
-            
+
             --glass-border: 1px solid rgba(255, 255, 255, 0.1);
             --glass-bg: rgba(255, 255, 255, 0.03);
             --glass-blur: blur(16px);
-            
+
             --shadow-neon: 0 0 10px hsla(var(--primary-hue), 70%, 53%, 0.5), 0 0 20px hsla(var(--primary-hue), 70%, 53%, 0.3);
             --shadow-alert: 0 0 15px rgba(255, 0, 60, 0.6);
-            
+
             --font-head: 'Orbitron', sans-serif;
             --font-body: 'Rajdhani', sans-serif;
-            
+
             --ease-tech: cubic-bezier(0.19, 1, 0.22, 1);
         }
 
@@ -55,7 +55,7 @@
             color: var(--text-main);
             font-family: var(--font-body);
             overflow-x: hidden;
-            background-image: 
+            background-image:
                 linear-gradient(hsla(var(--primary-hue), 70%, 53%, 0.05) 1px, transparent 1px),
                 linear-gradient(90deg, hsla(var(--primary-hue), 70%, 53%, 0.05) 1px, transparent 1px);
             background-size: 50px 50px;
@@ -70,7 +70,7 @@
         .flex-center { display: flex; justify-content: center; align-items: center; }
         .text-neon { text-shadow: 0 0 8px var(--primary); color: var(--highlight); }
         .text-alert { text-shadow: 0 0 8px var(--alert); color: var(--alert); }
-        
+
         .glass-panel {
             background: var(--glass-bg);
             backdrop-filter: var(--glass-blur);
@@ -87,6 +87,9 @@
             animation: scanline 8s linear infinite;
         }
         @keyframes scanline { 0% { transform: translateY(-100vh); } 100% { transform: translateY(100vh); } }
+
+        @keyframes boot-fade { 0% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
+        #boot-loader.auto-hide { animation: boot-fade 0.5s forwards 5s; }
 
         .static-overlay {
             position: fixed; inset: 0;
@@ -118,7 +121,7 @@
         }
         .brand { font-family: var(--font-head); font-weight: 900; letter-spacing: 2px; font-size: 1.3rem; }
         .brand span { color: var(--primary); }
-        
+
         .nav-dock {
             position: fixed;
             bottom: 20px;
@@ -266,6 +269,11 @@
             0%, 100% { box-shadow: 0 0 5px var(--primary); }
             50% { box-shadow: 0 0 15px var(--primary); }
         }
+
+        #retry-overlay {
+            position: fixed; bottom: 100px; right: 20px; z-index: 500;
+            display: flex; flex-direction: column; gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -274,8 +282,8 @@
 <div class="scanline-effect"></div>
 <div class="static-overlay" id="global-glitch"></div>
 
-<div id="boot-loader" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--font-head); overflow:hidden;">
-    <div id="boot-status" style="color:var(--primary); font-size:0.7rem; margin-bottom:10px; font-weight:700;">NEXUS_OS // V.4.1.0</div>
+<div id="boot-loader" class="auto-hide" style="position:fixed; inset:0; background:#000; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:var(--font-head); overflow:hidden;">
+    <div id="boot-status" style="color:var(--primary); font-size:0.7rem; margin-bottom:10px; font-weight:700;">NEXUS_OS // NEURAL_HANDSHAKE</div>
     <div id="boot-log" style="color:#333; font-size:0.5rem; text-align:center; height:60px; overflow:hidden; font-family:monospace; line-height:1.5;"></div>
     <div style="width:150px; height:1px; background:#111; margin-top:20px; position:relative;">
         <div id="boot-bar" style="position:absolute; inset:0; background:var(--primary); width:0%;"></div>
@@ -293,6 +301,13 @@
             <button class="btn-tech" style="background:var(--alert); border-radius: 2px;" id="alert-btn-view">INTERCEPT</button>
             <button class="btn-tech" style="background:rgba(255,255,255,0.05); border-radius: 2px;" onclick="closeAlert()">DISMISS</button>
         </div>
+    </div>
+</div>
+
+<div id="retry-overlay" class="hidden">
+    <div class="glass-panel" style="padding: 10px 15px; border-left: 2px solid var(--alert); display: flex; align-items: center; gap: 10px;">
+        <span style="font-size: 0.6rem; color: var(--text-muted);">SIGNAL_LOST</span>
+        <button class="btn-tech" style="padding: 4px 10px; font-size: 0.6rem;" onclick="syncNews()">RE-ACQUIRE</button>
     </div>
 </div>
 
@@ -541,7 +556,7 @@
             'settings': 'SYSTEM SETTINGS', 'lang-label': 'INTERFACE LANGUAGE',
             'apply': 'APPLY CHANGES', 'nav-grid': 'GRID', 'nav-time': 'TIME', 'nav-data': 'DATA',
             'theme-label': 'PRIMARY HUE', 'hue-label': 'HUE OFFSET',
-            'verified': 'NEURAL VERIFIED', 'unverified': 'UNVERIFIZIERT', 'integrity': 'SOURCE INTEGRITY',
+            'verified': 'NEURAL VERIFIED', 'unverified': 'UNVERIFIED', 'integrity': 'SOURCE INTEGRITY',
             'media': 'MEDIA UPLINKS', 'alert-head': 'CRITICAL SIGNAL DETECTED'
         },
         de: {
@@ -562,7 +577,8 @@
         region: localStorage.getItem('nexus_reg') || 'WW',
         hue: localStorage.getItem('nexus_hue') || 270,
         news: [],
-        activeView: 'grid'
+        activeView: 'grid',
+        failCount: 0
     };
 
     /* --- THEME & L10N --- */
@@ -571,7 +587,8 @@
         state.hue = h;
         localStorage.setItem('nexus_hue', h);
         document.documentElement.style.setProperty('--primary-hue', h);
-        document.getElementById('hue-display').innerText = h;
+        const display = document.getElementById('hue-display');
+        if (display) display.innerText = h;
     }
 
     function setLanguage(l) {
@@ -597,10 +614,13 @@
     /* --- NEWS ENGINE --- */
     async function syncNews() {
         const icon = document.getElementById('sync-icon');
-        gsap.to(icon, { rotation: "+=360", duration: 1, repeat: 1, ease: "power1.inOut" });
+        if (typeof gsap !== 'undefined') {
+            gsap.to(icon, { rotation: "+=360", duration: 1, repeat: 1, ease: "power1.inOut" });
+        }
 
         const localApi = `/api/news?region=${state.region}`;
         document.getElementById('last-sync-time').innerText = "SYNCING...";
+        document.getElementById('retry-overlay').classList.add('hidden');
 
         try {
             let response = await fetch(localApi);
@@ -609,25 +629,19 @@
                 if (data.items && data.items.length > 0) {
                     processData(data.items);
                     document.getElementById('last-sync-time').innerText = new Date().toLocaleTimeString();
-
-                    // Check for breaking news
-                    const breaking = data.items.slice(0, 10).find(n =>
-                        n.title.toUpperCase().includes('BREAKING') ||
-                        n.title.toUpperCase().includes('EILMELDUNG') ||
-                        n.title.toUpperCase().includes('URGENT')
-                    );
-                    if (breaking) {
-                        const newsObj = state.news.find(x => x.title === breaking.title);
-                        if (newsObj) showAlert(newsObj);
-                    }
-
+                    state.failCount = 0;
                     return;
                 }
             }
         } catch (e) {
             console.error("Sync failed", e);
         }
+
+        state.failCount++;
         document.getElementById('last-sync-time').innerText = "OFFLINE";
+        if (state.failCount > 0) {
+            document.getElementById('retry-overlay').classList.remove('hidden');
+        }
     }
 
     function showAlert(news) {
@@ -641,17 +655,23 @@
         };
 
         modal.classList.remove('hidden');
-        gsap.fromTo(modal.querySelector('.modal-content'),
-            { scale: 0.8, opacity: 0, y: 20 },
-            { scale: 1, opacity: 1, y: 0, duration: 0.15, ease: "power2.out" }
-        );
+        if (typeof gsap !== 'undefined') {
+            gsap.fromTo(modal.querySelector('.modal-content'),
+                { scale: 0.8, opacity: 0, y: 20 },
+                { scale: 1, opacity: 1, y: 0, duration: 0.15, ease: "power2.out" }
+            );
+        }
     }
 
     function closeAlert() {
         const modal = document.getElementById('alert-breaking');
-        gsap.to(modal.querySelector('.modal-content'), {
-            scale: 0.9, opacity: 0, duration: 0.1, onComplete: () => modal.classList.add('hidden')
-        });
+        if (typeof gsap !== 'undefined') {
+            gsap.to(modal.querySelector('.modal-content'), {
+                scale: 0.9, opacity: 0, duration: 0.1, onComplete: () => modal.classList.add('hidden')
+            });
+        } else {
+            modal.classList.add('hidden');
+        }
     }
 
     function extractKeywords(t) {
@@ -676,7 +696,6 @@
             const keywords = extractKeywords(title);
             const cat = getCategory(title);
 
-            // Generate more specific search terms for images
             const catMap = { 'CYBER':'hacker', 'BIO':'medical', 'TECH':'technology', 'FINANCE':'market', 'GLOBAL':'world' };
             const terms = [...keywords, catMap[cat] || 'cyberpunk'].join(',');
 
@@ -688,6 +707,8 @@
                 date: n.pubDate ? new Date(n.pubDate).toLocaleDateString() : new Date().toLocaleDateString(),
                 region: n.source || state.region,
                 cat: cat,
+                sentiment: (Math.random() * 2 - 1).toFixed(2),
+                entities: keywords.map(k => ({ text: k.toUpperCase(), type: Math.random() > 0.5 ? 'ORGA' : 'LOC' })),
                 img: `https://loremflickr.com/800/600/${terms}/all?lock=${i}`,
                 content: n.description || "",
                 verified: Math.random() > 0.3,
@@ -697,6 +718,17 @@
         });
         renderAll();
         updateSectorAnalysis();
+
+        // Breaking check
+        const breaking = items.slice(0, 10).find(n =>
+            n.title.toUpperCase().includes('BREAKING') ||
+            n.title.toUpperCase().includes('EILMELDUNG') ||
+            n.title.toUpperCase().includes('URGENT')
+        );
+        if (breaking) {
+            const newsObj = state.news.find(x => x.title === breaking.title);
+            if (newsObj) showAlert(newsObj);
+        }
     }
 
     function renderAll() {
@@ -712,7 +744,8 @@
         if (!container) return;
         const d = i18n[state.lang];
         container.innerHTML = items.slice(0, 30).map(n => {
-            const sig = btoa(unescape(encodeURIComponent(n.title))).substring(0, 8).toUpperCase();
+            let sig = "SIG_ERR";
+            try { sig = btoa(unescape(encodeURIComponent(n.title))).substring(0, 8).toUpperCase(); } catch(e){}
             return `
                 <div class="glass-panel news-card" onclick="openDetail(${n.id})">
                     <img src="${n.img}" class="news-thumb" loading="lazy">
@@ -725,7 +758,7 @@
                         </div>
                         <h4 class="card-title">${n.title}</h4>
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;">
-                            <div style="font-size:0.55rem; color:var(--text-muted); opacity:0.6;">SIG_${sig}</div>
+                            <div style="font-size:0.55rem; color:var(--text-muted); opacity:0.6;">${sig}</div>
                             <div style="font-size:0.55rem; color:var(--text-muted);">${n.date}</div>
                         </div>
                     </div>
@@ -733,13 +766,11 @@
             `;
         }).join('');
 
-        gsap.from('#' + id + ' .news-card', {
-            opacity: 0,
-            y: 15,
-            duration: 0.15,
-            stagger: 0.03,
-            ease: "power2.out"
-        });
+        if (typeof gsap !== 'undefined') {
+            gsap.from('#' + id + ' .news-card', {
+                opacity: 0, y: 15, duration: 0.1, stagger: 0.02, ease: "power2.out"
+            });
+        }
     }
 
     function renderTimeline() {
@@ -752,11 +783,10 @@
             </div>
         `).join('');
 
-        // Temporal Density
         const hours = new Array(24).fill(0);
         state.news.forEach(n => {
             const d = new Date(n.rawDate || Date.now());
-            hours[d.getHours()]++;
+            if (!isNaN(d.getHours())) hours[d.getHours()]++;
         });
         const max = Math.max(...hours, 1);
         const d = document.getElementById('time-density');
@@ -765,6 +795,7 @@
 
     function renderHotspots() {
         const c = document.getElementById('map-hotspots');
+        if (!c) return;
         c.innerHTML = '';
         for(let i=0; i<8; i++) {
             const div = document.createElement('div');
@@ -772,8 +803,10 @@
             div.style.left = (Math.random()*80 + 10) + '%';
             div.style.top = (Math.random()*60 + 20) + '%';
             div.onmouseover = () => {
-                document.getElementById('map-lat').innerText = (Math.random() * 180 - 90).toFixed(4);
-                document.getElementById('map-lng').innerText = (Math.random() * 360 - 180).toFixed(4);
+                const lat = document.getElementById('map-lat');
+                const lng = document.getElementById('map-lng');
+                if (lat) lat.innerText = (Math.random() * 180 - 90).toFixed(4);
+                if (lng) lng.innerText = (Math.random() * 360 - 180).toFixed(4);
             };
             div.onclick = () => openDetail(Math.floor(Math.random()*state.news.length));
             c.appendChild(div);
@@ -804,7 +837,9 @@
                 </div>
             `;
         }).join('');
-        gsap.to('.sector-fill', { width: (i, el) => el.dataset.pct + '%', duration: 0.8, ease: "power2.out", stagger: 0.05 });
+        if (typeof gsap !== 'undefined') {
+            gsap.to('.sector-fill', { width: (i, el) => el.dataset.pct + '%', duration: 0.5, ease: "power2.out", stagger: 0.05 });
+        }
 
         const ec = document.getElementById('entity-cloud');
         const sortedEntities = Object.entries(entityCounts).sort((a,b) => b[1] - a[1]);
@@ -839,13 +874,17 @@
         const target = document.getElementById('view-' + v);
 
         const glitch = document.getElementById('global-glitch');
-        gsap.fromTo(glitch, { opacity: 0.2 }, { opacity: 0, duration: 0.15 });
-
-        gsap.to(old, { opacity: 0, y: 5, duration: 0.08, onComplete: () => {
+        if (typeof gsap !== 'undefined') {
+            gsap.fromTo(glitch, { opacity: 0.2 }, { opacity: 0, duration: 0.05 });
+            gsap.to(old, { opacity: 0, y: 5, duration: 0.05, onComplete: () => {
+                old.classList.add('hidden');
+                target.classList.remove('hidden');
+                gsap.fromTo(target, { opacity: 0, y: -5 }, { opacity: 1, y: 0, duration: 0.08 });
+            }});
+        } else {
             old.classList.add('hidden');
             target.classList.remove('hidden');
-            gsap.fromTo(target, { opacity: 0, y: -5 }, { opacity: 1, y: 0, duration: 0.12 });
-        }});
+        }
 
         document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
         const navBtn = document.getElementById('nav-' + v);
@@ -859,46 +898,6 @@
         if (v === 'data') scrambleText('txt-data-title', d['data-title']);
     }
 
-    function generateAnalysis(title, cat) {
-        const keywords = extractKeywords(title).map(k => k.toUpperCase());
-        const k1 = keywords[0] || 'DATA';
-        const k2 = keywords[1] || 'SIGNAL';
-        const k3 = keywords[2] || 'NODE';
-
-        const corpus = {
-            'TECH': [
-                `Neural bypass in ${k1} logic detected. Synchronizing ${k2} with ${k3} sub-routines.`,
-                `Quantum drift in ${k2} confirmed. ${k1} architecture reaching critical saturation.`,
-                `Automated optimization of ${k3} initiated. Target: ${k1} integration.`
-            ],
-            'CYBER': [
-                `Large-scale breach targeting ${k1}. Securing ${k2} uplink via ${k3} encryption.`,
-                `Phantom signature found in ${k2}. ${k1} firewalls compromised by ${k3} exploit.`,
-                `Trace-back on ${k3} reveals high-density packet loss in ${k1} sector.`
-            ],
-            'BIO': [
-                `Evolutionary drift in ${k1} synthesis. ${k2} protocols showing ${k3} anomalies.`,
-                `Health protocol override for ${k2}. ${k1} biometrics synced with ${k3} data.`,
-                `Cellular reconstruction of ${k3} mapped to ${k1} neural patterns.`
-            ],
-            'GLOBAL': [
-                `Geopolitical realignment in ${k1}. ${k2} summits shifting focus to ${k3} assets.`,
-                `Diplomatic noise from ${k2} peak. ${k1} sanctions affecting ${k3} trade routes.`,
-                `Resource scarcity in ${k3} driving ${k1} instability across ${k2} corridor.`
-            ],
-            'FINANCE': [
-                `${k1} volatility exceeding threshold. ${k2} markets reacting to ${k3} fluctuations.`,
-                `Algorithmic trade patterns in ${k3} linked to ${k1} surplus liquidation.`,
-                `Economic forecasting for ${k2} suggests a $${(Math.random()*10).toFixed(1)}B shift in ${k1}.`
-            ]
-        };
-        const list = corpus[cat] || [
-            `Anomalous frequency in ${k1}. Calibrating ${k2} for ${k3} reception.`,
-            `Intercepting ${k2} stream. Extracting ${k1} metadata for ${k3} analysis.`
-        ];
-        return list[Math.floor(Math.random() * list.length)] + " // [HASH_" + Math.random().toString(36).substring(7).toUpperCase() + "]";
-    }
-
     function openDetail(id) {
         const n = state.news.find(x => x.id === id);
         if (!n) return;
@@ -908,7 +907,6 @@
         scrambleText('det-title', n.title);
         document.getElementById('det-content').innerHTML = n.content;
 
-        // MEDIA UPLINKS
         const uplinks = document.getElementById('media-uplinks-container');
         uplinks.innerHTML = '';
         const searchTerms = [...n.keywords, n.cat.toLowerCase()].join(',');
@@ -924,8 +922,10 @@
             uplinks.appendChild(img);
         }
 
-        scrambleText('det-analysis', generateAnalysis(n.title, n.cat));
-        document.getElementById('det-entities').innerHTML = n.keywords.map(kw => `<span class="glow-badge" style="border-color:var(--primary); color:var(--highlight);">${kw.toUpperCase()}</span>`).join('');
+        const analysis = `SENTIMENT: ${n.sentiment} // DETECTED_ENTITIES: ${n.entities.length}\nSignal polarity suggests high-density ${n.cat} fluctuation in the ${n.region} sector. Source integrity verified at ${n.integrity}%.`;
+        scrambleText('det-analysis', analysis);
+
+        document.getElementById('det-entities').innerHTML = n.entities.map(e => `<span class="glow-badge" style="border-color:var(--primary); color:var(--highlight);">${e.text} [${e.type}]</span>`).join('');
         document.getElementById('det-cat').innerText = `${n.cat} // ${n.region}`;
         document.getElementById('det-link').href = n.link;
         document.getElementById('det-verified').innerHTML = `<div class="${n.verified ? 'badge-verified' : 'badge-unverified'}">${n.verified ? d['verified'] : d['unverified']}</div>`;
@@ -934,13 +934,17 @@
 
         const bar = document.getElementById('integrity-fill');
         const val = document.getElementById('integrity-val');
-        gsap.set(bar, { width: "0%" });
-        gsap.to(bar, { width: n.integrity + "%", duration: 1, ease: "power2.out" });
-
-        let counter = { val: 0 };
-        gsap.to(counter, { val: n.integrity, duration: 1, onUpdate: () => {
-            val.innerText = Math.floor(counter.val) + "%";
-        }});
+        if (typeof gsap !== 'undefined') {
+            gsap.set(bar, { width: "0%" });
+            gsap.to(bar, { width: n.integrity + "%", duration: 0.5, ease: "power2.out" });
+            let counter = { val: 0 };
+            gsap.to(counter, { val: n.integrity, duration: 0.5, onUpdate: () => {
+                val.innerText = Math.floor(counter.val) + "%";
+            }});
+        } else {
+            bar.style.width = n.integrity + "%";
+            val.innerText = n.integrity + "%";
+        }
     }
 
     function filterVault() {
@@ -970,12 +974,14 @@
 
     function glitchFlash() {
         const g = document.getElementById('global-glitch');
-        gsap.fromTo(g, { opacity: 0.3 }, { opacity: 0, duration: 0.2 });
+        if (typeof gsap !== 'undefined') {
+            gsap.fromTo(g, { opacity: 0.3 }, { opacity: 0, duration: 0.2 });
+        }
     }
 
-    /* --- CANVAS BACKGROUND --- */
     function initNetwork() {
         const canvas = document.getElementById('network-canvas');
+        if (!canvas) return;
         const ctx = canvas.getContext('2d');
         let dots = [];
         const count = 40;
@@ -989,17 +995,15 @@
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-                const hue = getComputedStyle(document.documentElement).getPropertyValue('--primary-hue').trim();
-                ctx.strokeStyle = `hsla(${hue}, 70%, 53%, 0.1)`;
-                ctx.fillStyle = `hsla(${hue}, 70%, 53%, 0.2)`;
+            const hue = getComputedStyle(document.documentElement).getPropertyValue('--primary-hue').trim();
+            ctx.strokeStyle = `hsla(${hue}, 70%, 53%, 0.1)`;
+            ctx.fillStyle = `hsla(${hue}, 70%, 53%, 0.2)`;
 
             dots.forEach((d, i) => {
                 d.x += d.vx; d.y += d.vy;
                 if(d.x < 0 || d.x > canvas.width) d.vx *= -1;
                 if(d.y < 0 || d.y > canvas.height) d.vy *= -1;
-
                 ctx.beginPath(); ctx.arc(d.x, d.y, 1, 0, Math.PI*2); ctx.fill();
-
                 for(let j=i+1; j<dots.length; j++) {
                     const d2 = dots[j];
                     const dist = Math.hypot(d.x-d2.x, d.y-d2.y);
@@ -1020,30 +1024,36 @@
         syncNews();
         initNetwork();
 
-        // Environment Chart
         const env = document.getElementById('env-chart');
-        env.innerHTML = Array.from({length: 40}).map(() => `<div style="flex:1; height:${Math.random()*100}%; background:var(--primary); opacity:0.3; border-radius:1px; transition: height 0.4s var(--ease-tech);"></div>`).join('');
+        if (env) env.innerHTML = Array.from({length: 40}).map(() => `<div style="flex:1; height:${Math.random()*100}%; background:var(--primary); opacity:0.3; border-radius:1px; transition: height 0.4s var(--ease-tech);"></div>`).join('');
 
         setInterval(() => {
-            document.getElementById('stat-uplink').innerText = (Math.random() * 5 + 2).toFixed(1) + " TB/s";
-            document.getElementById('stat-latency').innerText = Math.floor(Math.random() * 20 + 5) + "ms";
-            env.querySelectorAll('div').forEach(b => b.style.height = (Math.random()*100)+"%");
-            document.getElementById('bw-pct').innerText = (80 + Math.floor(Math.random()*15)) + "%";
-            document.getElementById('st-pct').innerText = (95 + Math.floor(Math.random()*4)) + "%";
+            const up = document.getElementById('stat-uplink');
+            const lat = document.getElementById('stat-latency');
+            const bwp = document.getElementById('bw-pct');
+            const stp = document.getElementById('st-pct');
+            if (up) up.innerText = (Math.random() * 5 + 2).toFixed(1) + " TB/s";
+            if (lat) lat.innerText = Math.floor(Math.random() * 20 + 5) + "ms";
+            if (env) env.querySelectorAll('div').forEach(b => b.style.height = (Math.random()*100)+"%");
+            if (bwp) bwp.innerText = (80 + Math.floor(Math.random()*15)) + "%";
+            if (stp) stp.innerText = (95 + Math.floor(Math.random()*4)) + "%";
         }, 1000);
 
-        // Boot
         const log = document.getElementById('boot-log');
         const lines = ['INIT_NEXUS...', 'KERN_MEM_ALLOC', 'UPLINK_ESTABLISH', 'READY.'];
         let i = 0;
         const interval = setInterval(() => {
             if(i >= lines.length) {
                 clearInterval(interval);
-                gsap.to('#boot-bar', { width: "100%", duration: 0.2, onComplete: () => {
-                    gsap.to('#boot-loader', { opacity: 0, duration: 0.2, onComplete: () => {
-                        document.getElementById('boot-loader').remove();
+                if (typeof gsap !== 'undefined') {
+                    gsap.to('#boot-bar', { width: "100%", duration: 0.2, onComplete: () => {
+                        gsap.to('#boot-loader', { opacity: 0, duration: 0.2, onComplete: () => {
+                            document.getElementById('boot-loader').remove();
+                        }});
                     }});
-                }});
+                } else {
+                    document.getElementById('boot-loader').classList.add('auto-hide');
+                }
             } else {
                 const d = document.createElement('div'); d.innerText = `> ${lines[i]}`; log.appendChild(d); i++;
             }
@@ -1052,10 +1062,9 @@
         applyL10n();
         updateHue();
 
-        // Global snappy effect
         document.addEventListener('click', (e) => {
             const el = e.target.closest('button, .news-card, .nav-item, .glow-badge');
-            if (el) {
+            if (el && typeof gsap !== 'undefined') {
                 gsap.to(el, { scale: 0.95, duration: 0.08, yoyo: true, repeat: 1 });
             }
         });
