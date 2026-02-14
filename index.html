@@ -169,6 +169,7 @@
             border-radius: 10px; overflow: hidden; cursor: pointer; position: relative;
             border: 1px solid rgba(255,255,255,0.05);
             transition: transform 0.1s var(--ease-tech), border-color 0.1s var(--ease-tech);
+            background: rgba(15, 15, 15, 0.4);
         }
         .news-card:hover {
             border-color: var(--primary);
@@ -177,8 +178,8 @@
         }
 
         .news-thumb {
-            height: 150px; width: 100%; object-fit: cover;
-            filter: grayscale(100%) contrast(1.2) brightness(0.7);
+            height: 160px; width: 100%; object-fit: cover;
+            filter: grayscale(80%) contrast(1.1) brightness(0.8);
             transition: filter 0.3s var(--ease-tech), transform 0.3s var(--ease-tech);
         }
         .news-card:hover .news-thumb { filter: grayscale(0%) contrast(1) brightness(1); transform: scale(1.05); }
@@ -446,12 +447,21 @@
         state.failCount++; document.getElementById('last-sync-time').innerText = "OFFLINE"; document.getElementById('retry-overlay').classList.remove('hidden');
     }
 
+    function extractKeywords(t) {
+        const s = new Set(['the','and','for','with','this','that','from','google','news','video','says','after','watch','breaking', 'report', 'investigators', 'find', 'update', 'latest', 'news', 'google', 'more', 'about', 'warns', 'warn', 'agree', 'shows', 'will', 'first', 'year', 'could', 'should', 'would', 'their', 'there', 'they', 'them', 'these', 'those', 'where', 'when', 'while', 'which', 'what', 'who', 'whom', 'whose', 'how', 'why', 'can', 'could', 'should', 'would', 'must', 'may', 'might', 'shall', 'should', 'been', 'being', 'have', 'has', 'had', 'does', 'did', 'done']);
+        const words = (t.split(' - ')[0] || "").toLowerCase().replace(/[^\w\s]/g,' ').split(/\s+/).filter(w => w.length > 4 && !s.has(w));
+        return words.slice(0, 3);
+    }
+
     function processData(items) {
         state.news = items.map((n, i) => {
             const title = n.title || "UNDEFINED_SIGNAL";
             const keywords = extractKeywords(title);
             const cat = getCategory(title);
-            const fallbackImg = `https://loremflickr.com/800/600/${[...keywords, cat.toLowerCase()].join(',')}/all?lock=${i}`;
+            // Use title and index to create a more stable, unique lock for fallback images
+            const uniqueSeed = title.split('').reduce((a,b) => (a<<5)-a+b.charCodeAt(0), 0) + i;
+            const fallbackImg = `https://loremflickr.com/800/600/${[...keywords, cat.toLowerCase()].join(',')}/all?lock=${Math.abs(uniqueSeed) % 1000}`;
+
             return {
                 id: i, title: title, link: n.link || n.guid || "#", rawDate: n.pubDate, date: n.pubDate ? new Date(n.pubDate).toLocaleDateString() : new Date().toLocaleDateString(), region: n.source || state.region, cat: cat,
                 sentiment: (Math.random() * 2 - 1).toFixed(2), entities: keywords.map(k => ({ text: k.toUpperCase(), type: Math.random() > 0.5 ? 'ORGA' : 'LOC' })),
@@ -468,14 +478,15 @@
         const container = document.getElementById(id); if (!container) return; const d = i18n[state.lang];
         container.innerHTML = items.slice(0, 30).map(n => {
             let sig = "SIG_ERR"; try { sig = btoa(unescape(encodeURIComponent(n.title))).substring(0, 8).toUpperCase(); } catch(e){}
-            const fallbackImg = `https://loremflickr.com/800/600/${[...n.keywords, n.cat.toLowerCase()].join(',')}/all?lock=${n.id}`;
+            const uniqueSeed = n.title.split('').reduce((a,b) => (a<<5)-a+b.charCodeAt(0), 0) + n.id;
+            const fallbackImg = `https://loremflickr.com/800/600/${[...n.keywords, n.cat.toLowerCase()].join(',')}/all?lock=${Math.abs(uniqueSeed) % 1000}`;
             return `
                 <div class="glass-panel news-card" onclick="openDetail(${n.id})">
-                    <img src="${n.img}" class="news-thumb" loading="lazy" onerror="this.src='${fallbackImg}'">
+                    <img src="${n.img}" class="news-thumb" loading="lazy" onerror="this.src='${fallbackImg}'; this.onerror=null;">
                     <div class="card-body">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;"><span class="card-cat">${escapeHTML(n.cat)} // ${escapeHTML(n.region)}</span><div class="${n.verified ? 'badge-verified' : 'badge-unverified'}">${n.verified ? d['verified'] : d['unverified']}</div></div>
                         <h4 class="card-title">${escapeHTML(n.title)}</h4>
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;"><div style="font-size:0.55rem; color:var(--text-muted); opacity:0.6;">${sig}</div><div style="font-size:0.55rem; color:var(--text-muted);">${escapeHTML(n.date)}</div></div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px;"><div style="font-size:0.55rem; color:var(--text-muted); opacity:0.6;">SIG_${sig}</div><div style="font-size:0.55rem; color:var(--text-muted);">${escapeHTML(n.date)}</div></div>
                     </div>
                 </div>`;
         }).join('');
@@ -504,7 +515,6 @@
 
     function showAlert(news) { const modal = document.getElementById('alert-breaking'); if (!modal || !modal.classList.contains('hidden')) return; document.getElementById('alert-title').innerText = news.title; document.getElementById('alert-btn-view').onclick = () => { closeAlert(); openDetail(news.id); }; modal.classList.remove('hidden'); if (typeof gsap !== 'undefined') gsap.fromTo(modal.querySelector('.modal-content'), { scale: 0.8, opacity: 0, y: 20 }, { scale: 1, opacity: 1, y: 0, duration: 0.15, ease: "power2.out" }); }
     function closeAlert() { const modal = document.getElementById('alert-breaking'); if (typeof gsap !== 'undefined') gsap.to(modal.querySelector('.modal-content'), { scale: 0.9, opacity: 0, duration: 0.1, onComplete: () => modal.classList.add('hidden') }); else modal.classList.add('hidden'); }
-    function extractKeywords(t) { const s = new Set(['the','and','for','with','this','that','from','google','news','video','says','after','watch','breaking', 'report', 'investigators', 'find', 'update', 'latest', 'news', 'google', 'more', 'about', 'warns', 'warn', 'agree', 'shows', 'will', 'first', 'year', 'could', 'should', 'would']); return (t.split(' - ')[0] || "").toLowerCase().replace(/[^\w\s]/g,' ').split(/\s+/).filter(w => w.length > 3 && !s.has(w)).slice(0,3); }
     function getCategory(title) { const t = (title || "").toLowerCase(); if (/(cyber|hack|security|leak|malware|ransomware|breach|exploit|firewall)/i.test(t)) return 'CYBER'; if (/(tech|ai|robot|digital|software|data|silicon|apple|google|microsoft|nvidia|tesla|musk|spacex|quantum|computing|smartphone|app)/i.test(t)) return 'TECH'; if (/(climate|environment|bio|health|medical|virus|pandemic|dna|nature|green|energy|oil|gas|ocean|ecology|warming|solar|wind)/i.test(t)) return 'BIO'; if (/(finance|market|stock|economy|trade|bank|crypto|bitcoin|price|dollar|euro|inflation|interest|fed|nasdaq|dow)/i.test(t)) return 'FINANCE'; if (/(war|conflict|politics|election|government|china|russia|usa|un|world|crisis|summit|trump|biden|border|senate|parliament|nato)/i.test(t)) return 'GLOBAL'; return 'INTEL'; }
     function renderTimeline() { const c = document.getElementById('timeline-feed'); c.innerHTML = state.news.map(n => `<div class="glass-panel timeline-node" onclick="openDetail(${n.id})"><div class="node-dot"></div><div style="font-size:0.7rem; color:var(--primary); margin-bottom:5px;">${escapeHTML(n.date)} // ${escapeHTML(n.cat)}</div><h4 style="margin:0; font-size:0.9rem; line-height:1.4;">${escapeHTML(n.title)}</h4></div>`).join(''); const h = new Array(24).fill(0); state.news.forEach(n => { const d = new Date(n.rawDate || Date.now()); if (!isNaN(d.getHours())) h[d.getHours()]++; }); const m = Math.max(...h, 1); document.getElementById('time-density').innerHTML = h.map(count => `<div style="flex:1; background:var(--primary); opacity:${count > 0 ? 0.8 : 0.1}; height:${Math.max((count/m)*100, 5)}%; border-radius:1px;"></div>`).join(''); }
     function renderHotspots() { const c = document.getElementById('map-hotspots'); if (!c) return; c.innerHTML = ''; for(let i=0; i<8; i++) { const div = document.createElement('div'); div.className = 'hotspot'; div.style.left = (Math.random()*80 + 10) + '%'; div.style.top = (Math.random()*60 + 20) + '%'; div.onmouseover = () => { document.getElementById('map-lat').innerText = (Math.random() * 180 - 90).toFixed(4); document.getElementById('map-lng').innerText = (Math.random() * 360 - 180).toFixed(4); }; div.onclick = () => openDetail(Math.floor(Math.random()*state.news.length)); c.appendChild(div); } }
